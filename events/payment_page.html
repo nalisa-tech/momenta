@@ -1,0 +1,662 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Payment - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+    <div class="max-w-4xl mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+                <i class="fas fa-credit-card text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Secure Payment</h1>
+            <p class="text-gray-600">Complete your booking for {{ event.title }}</p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-receipt text-blue-600 mr-2"></i>
+                        Order Summary
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-gray-900">{{ event.title }}</p>
+                                <p class="text-sm text-gray-600">{{ ticket_type|title }} Ticket</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-medium">{{ tickets }} ticket{{ tickets|pluralize }}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Price per ticket:</span>
+                                <span class="font-medium">K{{ event.price }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold">Total:</span>
+                                <span class="text-2xl font-bold text-blue-600">K{{ total_price }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Badge -->
+                    <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                            <div>
+                                <p class="text-sm font-medium text-green-800">Secure Payment</p>
+                                <p class="text-xs text-green-600">Your payment is protected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <form method="post" class="space-y-8">
+                        {% csrf_token %}
+                        
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="ticket_type" value="{{ ticket_type }}">
+                        <input type="hidden" name="tickets" value="{{ tickets }}">
+
+                        <!-- Payment Methods -->
+                        <div>
+                            <h3 class="text-xl font-semibold mb-6 flex items-center">
+                                <i class="fas fa-wallet text-blue-600 mr-3"></i>
+                                Choose Payment Method
+                            </h3>
+                            
+                            <div class="grid gap-4">
+                                <!-- MTN Mobile Money -->
+                                <label class="payment-option group">
+                                    <input type="radio" name="payment_method" value="mtn" class="sr-only" required>
+                                    <div class="payment-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 group-hover:border-yellow-400 group-hover:shadow-lg">
+                                        <div class="flex items-center">
+                                            <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                                <span class="text-white font-bold text-lg">MTN</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h4 class="text-lg font-semibold text-gray-900">MTN Mobile Money</h4>
+                                                <p class="text-gray-600">Pay securely with your MTN MoMo wallet</p>
+                                                <div class="flex items-center mt-2">
+                                                    <i class="fas fa-mobile-alt text-yellow-600 mr-1"></i>
+                                                    <span class="text-sm text-gray-500">Instant payment</span>
+                                                </div>
+                                            </div>
+                                            <div class="payment-check">
+                                                <i class="fas fa-check-circle text-2xl text-yellow-600 opacity-0 transition-opacity duration-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Airtel Money -->
+                                <label class="payment-option group">
+                                    <input type="radio" name="payment_method" value="airtel" class="sr-only" required>
+                                    <div class="payment-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 group-hover:border-red-400 group-hover:shadow-lg">
+                                        <div class="flex items-center">
+                                            <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                                <span class="text-white font-bold text-sm">AIRTEL</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h4 class="text-lg font-semibold text-gray-900">Airtel Money</h4>
+                                                <p class="text-gray-600">Pay securely with your Airtel Money wallet</p>
+                                                <div class="flex items-center mt-2">
+                                                    <i class="fas fa-mobile-alt text-red-600 mr-1"></i>
+                                                    <span class="text-sm text-gray-500">Instant payment</span>
+                                                </div>
+                                            </div>
+                                            <div class="payment-check">
+                                                <i class="fas fa-check-circle text-2xl text-red-600 opacity-0 transition-opacity duration-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Zamtel Money -->
+                                <label class="payment-option group">
+                                    <input type="radio" name="payment_method" value="zamtel" class="sr-only" required>
+                                    <div class="payment-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 group-hover:border-green-400 group-hover:shadow-lg">
+                                        <div class="flex items-center">
+                                            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                                <span class="text-white font-bold text-sm">ZMT</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h4 class="text-lg font-semibold text-gray-900">Zamtel Money</h4>
+                                                <p class="text-gray-600">Pay securely with your Zamtel Money wallet</p>
+                                                <div class="flex items-center mt-2">
+                                                    <i class="fas fa-mobile-alt text-green-600 mr-1"></i>
+                                                    <span class="text-sm text-gray-500">Instant payment</span>
+                                                </div>
+                                            </div>
+                                            <div class="payment-check">
+                                                <i class="fas fa-check-circle text-2xl text-green-600 opacity-0 transition-opacity duration-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Bank Transfer -->
+                                <label class="payment-option group">
+                                    <input type="radio" name="payment_method" value="bank" class="sr-only" required>
+                                    <div class="payment-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 group-hover:border-purple-400 group-hover:shadow-lg">
+                                        <div class="flex items-center">
+                                            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                                                <i class="fas fa-university text-white text-xl"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h4 class="text-lg font-semibold text-gray-900">Bank Transfer</h4>
+                                                <p class="text-gray-600">Standard Chartered Bank transfer</p>
+                                                <div class="flex items-center mt-2">
+                                                    <i class="fas fa-clock text-purple-600 mr-1"></i>
+                                                    <span class="text-sm text-gray-500">1-2 business days</span>
+                                                </div>
+                                            </div>
+                                            <div class="payment-check">
+                                                <i class="fas fa-check-circle text-2xl text-purple-600 opacity-0 transition-opacity duration-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Money Instructions -->
+                        <div class="mobile-money-fields" style="display: none;">
+                            <!-- Send Money To Section -->
+                            <div class="bg-blue-50 rounded-xl p-6 border-2 border-blue-200 mb-4">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-mobile-alt text-blue-600 text-2xl mr-3"></i>
+                                    <h3 class="text-lg font-bold text-blue-800">Mobile Money Payment</h3>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-4 mb-4 border border-blue-200">
+                                    <h4 class="font-semibold text-gray-800 mb-3">📱 Send Money To:</h4>
+                                    
+                                    <!-- MTN Number -->
+                                    <div id="mtn-details" class="payment-details" style="display: none;">
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                <span class="font-medium text-gray-700">MTN Number:</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-mono text-lg font-bold text-yellow-600" id="mtn-number">{{ mtn_number }}</span>
+                                                    <button type="button" onclick="copyMobileNumber('{{ mtn_number }}')" class="text-yellow-600 hover:text-yellow-800 transition-colors">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                <span class="font-medium text-gray-700">Amount:</span>
+                                                <span class="font-bold text-green-600 text-lg">K{{ total_price }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Airtel Number -->
+                                    <div id="airtel-details" class="payment-details" style="display: none;">
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                                                <span class="font-medium text-gray-700">Airtel Number:</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-mono text-lg font-bold text-red-600" id="airtel-number">{{ airtel_number }}</span>
+                                                    <button type="button" onclick="copyMobileNumber('{{ airtel_number }}')" class="text-red-600 hover:text-red-800 transition-colors">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                <span class="font-medium text-gray-700">Amount:</span>
+                                                <span class="font-bold text-green-600 text-lg">K{{ total_price }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Zamtel Number -->
+                                    <div id="zamtel-details" class="payment-details" style="display: none;">
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                                                <span class="font-medium text-gray-700">Zamtel Number:</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-mono text-lg font-bold text-green-600" id="zamtel-number">{{ zamtel_number }}</span>
+                                                    <button type="button" onclick="copyMobileNumber('{{ zamtel_number }}')" class="text-green-600 hover:text-green-800 transition-colors">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                <span class="font-medium text-gray-700">Amount:</span>
+                                                <span class="font-bold text-green-600 text-lg">K{{ total_price }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
+                                        <div>
+                                            <h5 class="font-semibold text-yellow-800 mb-2">Payment Instructions:</h5>
+                                            <ul class="text-sm text-yellow-700 space-y-1">
+                                                <li>• Send exactly <strong>K{{ total_price }}</strong> to the number above</li>
+                                                <li>• Use reference: <strong>{{ event.title|truncatechars:15 }} - {{ user.username }}</strong></li>
+                                                <li>• Payment is processed instantly</li>
+                                                <li>• Keep your transaction SMS as proof</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Your Phone Number Input -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <i class="fas fa-phone text-blue-600 mr-2"></i>
+                                    Your Mobile Number (for confirmation)
+                                </label>
+                                <div class="relative">
+                                    <input type="tel" 
+                                           name="phone_number" 
+                                           placeholder="097XXXXXXX" 
+                                           class="w-full border-2 border-gray-300 rounded-lg p-4 text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300" 
+                                           pattern="[0-9]{10}">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                                        <i class="fas fa-mobile-alt text-gray-400"></i>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Enter your phone number for payment confirmation (e.g., 0971234567)
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Bank Transfer Details -->
+                        <div class="bank-transfer-fields" style="display: none;">
+                            <div class="bg-purple-50 rounded-xl p-6 border-2 border-purple-200">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-university text-purple-600 text-2xl mr-3"></i>
+                                    <h3 class="text-lg font-bold text-purple-800">Bank Transfer Instructions</h3>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-4 mb-4 border border-purple-200">
+                                    <h4 class="font-semibold text-gray-800 mb-3">💳 Send Payment To:</h4>
+                                    
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span class="font-medium text-gray-700">Bank Name:</span>
+                                            <span class="font-semibold text-gray-800">{{ bank_name }}</span>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span class="font-medium text-gray-700">Account Number:</span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-mono text-lg font-bold text-purple-600" id="account-number">{{ bank_account_number }}</span>
+                                                <button type="button" onclick="copyAccountNumber()" class="text-purple-600 hover:text-purple-800 transition-colors">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span class="font-medium text-gray-700">Account Name:</span>
+                                            <span class="font-semibold text-gray-800">{{ bank_account_name }}</span>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span class="font-medium text-gray-700">Amount:</span>
+                                            <span class="font-bold text-green-600 text-lg">K{{ total_price }}</span>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span class="font-medium text-gray-700">Reference:</span>
+                                            <span class="font-mono text-sm text-gray-600">{{ event.title|truncatechars:20 }} - {{ user.username }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
+                                        <div>
+                                            <h5 class="font-semibold text-yellow-800 mb-2">Important Instructions:</h5>
+                                            <ul class="text-sm text-yellow-700 space-y-1">
+                                                <li>• Send exactly <strong>K{{ total_price }}</strong> to <strong>{{ bank_name }}</strong></li>
+                                                <li>• Account Number: <strong>{{ bank_account_number }}</strong> ({{ bank_account_name }})</li>
+                                                <li>• Use the reference above when making the transfer</li>
+                                                <li>• Payment confirmation takes 1-2 business days</li>
+                                                <li>• Keep your bank receipt as proof of payment</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-info-circle text-blue-600"></i>
+                                        <div>
+                                            <p class="text-sm text-blue-700">
+                                                <strong>Need Help?</strong> Contact us at 
+                                                <a href="tel:0978308101" class="font-semibold underline">0978308101</a> 
+                                                or email 
+                                                <a href="mailto:nalisaimbula282@gmail.com" class="font-semibold underline">nalisaimbula282@gmail.com</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-6">
+                            <button type="submit" 
+                                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl py-4 px-8 text-lg font-semibold hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                                <i class="fas fa-lock mr-3"></i>
+                                Complete Secure Payment - K{{ total_price }}
+                            </button>
+                            
+                            <div class="flex items-center justify-center mt-4 text-sm text-gray-500">
+                                <i class="fas fa-shield-alt mr-2"></i>
+                                <span>256-bit SSL encryption • Your data is secure</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Payment Processing Modal -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h3 class="text-xl font-semibold mb-2">Processing Payment...</h3>
+                <p class="text-gray-600 mb-4" id="payment-status">Please wait while we process your payment</p>
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <p class="text-sm text-blue-800" id="payment-instructions">
+                        Check your phone for SMS authorization prompt
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.payment-option input:checked + .payment-card {
+    border-color: #3B82F6 !important;
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+}
+
+.payment-option input:checked + .payment-card .payment-check i {
+    opacity: 1 !important;
+}
+
+.payment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-money-fields {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading animation */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Gradient background animation */
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.bg-gradient-animated {
+    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentOptions = document.querySelectorAll('input[name="payment_method"]');
+    const mobileMoneyFields = document.querySelector('.mobile-money-fields');
+    const phoneInput = document.querySelector('input[name="phone_number"]');
+    const form = document.querySelector('form');
+
+    // Show/hide payment method specific fields
+    const bankTransferFields = document.querySelector('.bank-transfer-fields');
+    
+    paymentOptions.forEach(option => {
+        option.addEventListener('change', function() {
+            const isMobileMoney = ['mtn', 'airtel', 'zamtel'].includes(this.value);
+            const isBankTransfer = this.value === 'bank';
+            
+            // Mobile Money Fields
+            if (isMobileMoney) {
+                mobileMoneyFields.style.display = 'block';
+                phoneInput.required = true;
+                
+                // Show specific payment details
+                document.querySelectorAll('.payment-details').forEach(detail => {
+                    detail.style.display = 'none';
+                });
+                
+                if (this.value === 'mtn') {
+                    document.getElementById('mtn-details').style.display = 'block';
+                } else if (this.value === 'airtel') {
+                    document.getElementById('airtel-details').style.display = 'block';
+                } else if (this.value === 'zamtel') {
+                    document.getElementById('zamtel-details').style.display = 'block';
+                }
+            } else {
+                mobileMoneyFields.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            }
+            
+            // Bank Transfer Fields
+            if (isBankTransfer) {
+                bankTransferFields.style.display = 'block';
+            } else {
+                bankTransferFields.style.display = 'none';
+            }
+        });
+    });
+
+    // Form validation and submission
+    form.addEventListener('submit', function(e) {
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+        
+        if (!paymentMethod) {
+            e.preventDefault();
+            showNotification('Please select a payment method', 'error');
+            return false;
+        }
+
+        const isMobileMoney = ['mtn', 'airtel', 'zamtel'].includes(paymentMethod.value);
+        if (isMobileMoney && !phoneInput.value.trim()) {
+            e.preventDefault();
+            showNotification('Please enter your mobile money number', 'error');
+            phoneInput.focus();
+            return false;
+        }
+
+        // Validate phone number format
+        if (isMobileMoney && phoneInput.value.trim()) {
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phoneRegex.test(phoneInput.value.trim())) {
+                e.preventDefault();
+                showNotification('Please enter a valid 10-digit phone number', 'error');
+                phoneInput.focus();
+                return false;
+            }
+        }
+
+        // Show processing modal
+        showPaymentModal(paymentMethod.value);
+    });
+
+    // Copy mobile number function
+    window.copyMobileNumber = function(number) {
+        navigator.clipboard.writeText(number).then(function() {
+            showNotification('Mobile number copied to clipboard!', 'success');
+        }).catch(function() {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = number;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showNotification('Mobile number copied!', 'success');
+        });
+    };
+
+    // Copy account number function
+    window.copyAccountNumber = function() {
+        const accountNumber = document.getElementById('account-number').textContent;
+        navigator.clipboard.writeText(accountNumber).then(function() {
+            showNotification('Account number copied to clipboard!', 'success');
+        }).catch(function() {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = accountNumber;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showNotification('Account number copied!', 'success');
+        });
+    };
+
+    // Phone number formatting
+    phoneInput.addEventListener('input', function() {
+        // Remove non-digits
+        let value = this.value.replace(/\D/g, '');
+        
+        // Limit to 10 digits
+        if (value.length > 10) {
+            value = value.slice(0, 10);
+        }
+        
+        this.value = value;
+        
+        // Visual feedback
+        if (value.length === 10) {
+            this.classList.add('border-green-500');
+            this.classList.remove('border-red-500');
+        } else if (value.length > 0) {
+            this.classList.add('border-red-500');
+            this.classList.remove('border-green-500');
+        } else {
+            this.classList.remove('border-green-500', 'border-red-500');
+        }
+    });
+
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
+        
+        if (type === 'error') {
+            notification.className += ' bg-red-500 text-white';
+        } else if (type === 'success') {
+            notification.className += ' bg-green-500 text-white';
+        } else {
+            notification.className += ' bg-blue-500 text-white';
+        }
+        
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    function showPaymentModal(method) {
+        const modal = document.getElementById('payment-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Update instructions based on payment method
+            const instructions = document.getElementById('payment-instructions');
+            if (instructions) {
+                let message = 'Please wait while we process your payment';
+                if (['mtn', 'airtel', 'zamtel'].includes(method)) {
+                    message = 'Check your phone for SMS authorization prompt';
+                } else if (method === 'bank') {
+                    message = 'Please complete the bank transfer using the details provided above. Your booking will be confirmed once payment is received.';
+                }
+                instructions.textContent = message;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

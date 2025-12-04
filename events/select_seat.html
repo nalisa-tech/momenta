@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Select Seat{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-6 mt-8">
+    <h2 class="text-2xl font-bold text-center mb-4">{{ event.title }}</h2>
+    <p class="text-center text-gray-600 mb-6">{{ event.date }} • {{ event.location }}</p>
+
+    <form method="post" action="{% url 'events:payment_page' event.id %}">
+        {% csrf_token %}
+
+        <label class="block font-semibold mb-2">Choose Ticket Type:</label>
+
+        <select name="ticket_type" class="w-full border rounded-lg p-2 mb-4" required>
+            <option value="" disabled selected>Choose ticket type...</option>
+            {% if event.vip_available > 0 %}
+                <option value="vip">VIP - K1500 ({{ event.vip_available }} left)</option>
+            {% endif %}
+
+            {% if event.gold_available > 0 %}
+                <option value="gold">Gold - K850 ({{ event.gold_available }} left)</option>
+            {% endif %}
+
+            {% if event.standard_available > 0 %}
+                <option value="standard">Standard - K450 ({{ event.standard_available }} left)</option>
+            {% endif %}
+        </select>
+        
+        {% if event.vip_seats_left <= 0 and event.gold_seats_left <= 0 and event.standard_seats_left <= 0 %}
+            <p class="text-red-600 text-center mb-4">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Sorry, this event is sold out!
+            </p>
+        {% endif %}
+
+        <label class="block font-semibold mb-2">Number of Tickets:</label>
+        <input type="number" name="tickets" min="1" value="1"
+               class="w-full border rounded-lg p-2 mb-4">
+
+        <button type="submit"
+            class="w-full bg-blue-600 text-white rounded-lg py-2 mt-4 hover:bg-blue-700">
+            Continue to Payment
+        </button>
+    </form>
+</div>
+{% endblock %}

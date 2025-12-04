@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+
+<div class="auth-box">
+    <h2>Create Account</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Username</label>
+        <input type="text" name="username" required>
+
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password1" required>
+
+        <label>Confirm Password</label>
+        <input type="password" name="password2" required>
+
+        <button class="btn large">Register</button>
+    </form>
+
+    <p class="auth-switch">
+        Already have an account?
+        <a href="{% url 'events:login' %}">Login</a>
+    </p>
+</div>
+
+{% endblock %}

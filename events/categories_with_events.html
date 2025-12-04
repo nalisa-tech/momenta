@@ -1,0 +1,38 @@
+ {% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} – Momenta{% endblock %}
+
+{% block content %}
+<section class="py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-gray-800">{{ page_title }}</h1>
+      <p class="text-xl text-gray-600 mt-4">The hottest events in Zambia</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {% for event in events %}
+      <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition">
+        <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-64 object-cover">
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-gray-800">{{ event.title }}</h3>
+          <p class="text-gray-600 mt-2">
+            {{ event.date|date:"d M Y" }} • {{ event.location }}
+          </p>
+          <div class="mt-6 flex justify-between items-center">
+            <span class="text-3xl font-bold text-blue-600">K{{ event.price }}</span>
+            <a href="{% url 'events:event_detail' event.id %}" 
+               class="bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition">
+              View Event
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="col-span-full text-center text-xl text-gray-600">No events in this category yet. Check back soon!</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
