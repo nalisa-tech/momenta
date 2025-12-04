@@ -9,3 +9,7 @@ cmds = ['python manage.py collectstatic --noinput']
 
 [start]
 cmd = 'gunicorn event_system.wsgi:application --bind 0.0.0.0:$PORT'
+
+[variables]
+DJANGO_SETTINGS_MODULE = 'event_system.settings'
+WSGI_APPLICATION = 'event_system.wsgi.application'
