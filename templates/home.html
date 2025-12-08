@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Momenta – Book Events in Zambia{% endblock %}
+
+{% block styles %}
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --text: #1f2937;
+  }
+
+  .hero {
+    position: relative;
+    height: 92vh;
+    min-height: 650px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+  }
+
+  .hero video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.8));
+    z-index: -1;
+  }
+
+  .hero-content h1 {
+    font-size: 3.8rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  }
+
+  .hero-content p {
+    font-size: 1.5rem;
+    margin: 1.5rem 0 2rem;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  }
+
+  .btn-hero {
+    background: var(--primary);
+    color: white;
+    padding: 1rem 3rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+  }
+
+  .btn-hero:hover {
+    background: var(--primary-dark);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(29, 78, 216, 0.5);
+  }
+
+  .events-grid { /* your existing styles */ }
+  .event-card { /* your existing styles */ }
+  /* ... rest of your beautiful styles stay exactly the same ... */
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover -z-10">
+    <source src="{% static 'images/hero-zambia.mp4' %}" type="video/mp4">
+    <img src="{% static 'images/hero-zambia.jpg' %}" alt="Zambia Events" class="w-full h-full object-cover">
+  </video>
+
+  <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+  <div class="relative z-10 text-center text-white max-w-5xl mx-auto px-6 py-32">
+    <h1 class="text-5xl md:text-7xl font-extrabold mb-4 drop-shadow-2xl">
+      Zambia's #1 Event Platform
+    </h1>
+    <p class="text-2xl md:text-3xl mb-10 font-medium drop-shadow-lg">
+      Concerts • Tech • Food • Conferences — All in <strong>ZMW</strong>
+    </p>
+    <a href="{% url 'events:events_list' %}" class="btn-hero text-xl px-12 py-5 inline-block">
+  Explore Events
+</a>
+  </div>
+</section>
+
+<!-- UPCOMING EVENTS SECTION -->
+<section class="bg-gray-50">
+  <div class="text-center py-16">
+    <h2 class="text-4xl font-bold text-gray-800 mb-4">Upcoming Events</h2>
+    <p class="text-xl text-gray-600">Don't miss out — tickets are moving fast!</p>
+  </div>
+  {{ block.super }}
+</section>
+
+<!-- CATEGORIES SECTION -->
+<section class="bg-white py-20">
+  <div class="text-center mb-12">
+    <h2 class="text-4xl font-bold text-gray-800 mb-4">Browse by Category</h2>
+    <p class="text-lg text-gray-600">Find exactly what you're looking for</p>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
+  <a href="{% url 'events:category_detail' 'music' %}" class="text-center p-8 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-all hover:scale-105">
+  <i class="fas fa-music text-5xl text-blue-600 mb-4"></i>
+  <h3 class="text-xl font-bold">Music & Concerts</h3>
+</a>
+
+<a href="{% url 'events:category_detail' 'tech' %}" class="text-center p-8 bg-green-50 rounded-2xl hover:bg-green-100 transition-all hover:scale-105">
+  <i class="fas fa-laptop-code text-5xl text-green-600 mb-4"></i>
+  <h3 class="text-xl font-bold">Tech & Innovation</h3>
+</a>
+
+<a href="{% url 'events:category_detail' 'food' %}" class="text-center p-8 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-all hover:scale-105">
+  <i class="fas fa-utensils text-5xl text-orange-600 mb-4"></i>
+  <h3 class="text-xl font-bold">Food & Festivals</h3>
+</a>
+
+<a href="{% url 'events:category_detail' 'sports' %}" class="text-center p-8 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-all hover:scale-105">
+  <i class="fas fa-futbol text-5xl text-purple-600 mb-4"></i>
+  <h3 class="text-xl font-bold">Sports & Recreation</h3>
+</a>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // TikTok embed (only load once)
+  if (!window.tiktokLoaded) {
+    const script = document.createElement('script');
+    script.src = 'https://www.tiktok.com/embed.js';
+    script.async = true;
+    document.body.appendChild(script);
+    window.tiktokLoaded = true;
+  }
+</script>
+{% endblock %}

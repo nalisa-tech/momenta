@@ -1,0 +1,142 @@
+# Nalisa - Event Management System 🎫
+
+A modern Django-based event ticketing platform for Zambia. Book tickets for concerts, tech events, food festivals, and business conferences with ease.
+
+## ✨ Features
+
+- **Browse Events by Category** - Music, Tech, Food, Business
+- **Tiered Ticket Booking** - VIP, Gold, and Standard seats
+- **User Authentication** - Secure registration and login
+- **User Profile** - View booking history and manage account
+- **Admin Panel** - Full event and booking management
+- **Responsive Design** - Beautiful UI with Tailwind CSS
+- **Real-time Seat Availability** - Track remaining seats
+- **Multiple Payment Methods** - Mobile Money, Bank Transfer, Cash
+- **Event Gallery Slideshow** - Auto-advancing image gallery showing previous events
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package manager)
+
+### Installation
+
+1. **Clone or download the project**
+   ```bash
+   cd mike
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirement.txt
+   ```
+
+3. **Run database migrations**
+   ```bash
+   python manage.py migrate
+   ```
+
+4. **Populate sample data** (optional but recommended)
+   ```bash
+   python manage.py populate_data
+   ```
+
+5. **Create admin user**
+   ```bash
+   python manage.py createsuperuser
+   ```
+   Follow the prompts to set username, email, and password.
+
+6. **Run the development server**
+   ```bash
+   python manage.py runserver
+   ```
+
+7. **Access the application**
+   - Main site: http://127.0.0.1:8000/
+   - Admin panel: http://127.0.0.1:8000/admin/
+
+## 📁 Project Structure
+
+```
+mike/
+├── events/                 # Main app
+│   ├── models.py          # Database models (Event, Category, Booking)
+│   ├── views.py           # View functions
+│   ├── urls.py            # URL routing
+│   ├── admin.py           # Admin configuration
+│   ├── forms.py           # Form definitions
+│   └── static/            # Static files (CSS, JS, images)
+├── templates/             # HTML templates
+│   ├── base.html         # Base template
+│   ├── home.html         # Homepage
+│   └── events/           # Event-specific templates
+├── media/                # Uploaded files (event images)
+├── event_system/         # Project settings
+│   ├── settings.py       # Django settings
+│   ├── urls.py           # Root URL configuration
+│   └── wsgi.py           # WSGI configuration
+├── db.sqlite3            # SQLite database
+├── manage.py             # Django management script
+└── requirement.txt       # Python dependencies
+```
+
+## 🎯 Usage
+
+### For Users
+1. **Browse Events** - Visit the homepage and explore events by category
+2. **Register/Login** - Create an account or login
+3. **Book Tickets** - Select an event, choose ticket type, and complete payment
+4. **View Bookings** - Check your profile to see all your bookings
+
+### For Admins
+1. Login to admin panel at `/admin/`
+2. **Manage Categories** - Add/edit event categories
+3. **Create Events** - Add new events with details, images, and seat counts
+4. **View Bookings** - Monitor all ticket bookings
+5. **Manage Users** - View and manage user accounts
+
+## 🛠️ Tech Stack
+
+- **Backend**: Django 5.2
+- **Database**: SQLite (easily upgradeable to PostgreSQL/MySQL)
+- **Frontend**: HTML5, Tailwind CSS
+- **Icons**: Font Awesome 6
+- **Image Handling**: Pillow
+
+## 📝 Adding New Events
+
+Via Admin Panel:
+1. Go to http://127.0.0.1:8000/admin/
+2. Click "Events" → "Add Event"
+3. Fill in event details:
+   - Title, description, date, time
+   - Location
+   - Category
+   - Seat counts (VIP, Gold, Standard)
+   - Upload event image
+4. Save
+
+## 🔒 Security Notes
+
+- Change `SECRET_KEY` in production (use environment variables)
+- Set `DEBUG = False` in production
+- Configure `ALLOWED_HOSTS` for your domain
+- Use HTTPS in production
+- Consider using PostgreSQL for production
+
+## 📧 Contact
+
+For support or inquiries:
+- Email: nalisaimbula282@gmail.com
+- Phone: 0978308101
+- Location: Lusaka, Zambia
+
+## 📄 License
+
+This project is for educational and commercial use.
+
+---
+
+**Built with ❤️ in Zambia**

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Upcoming Events - Momenta{% endblock %}
+
+{% block styles %}
+<style>
+  .event-card {
+    transition: all 0.3s ease;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  
+  .event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  }
+  
+  .event-image {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+  }
+  
+  .category-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+  }
+  
+  .price-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  .search-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+  
+  .filter-btn {
+    transition: all 0.3s ease;
+  }
+  
+  .filter-btn.active {
+    background: #2563eb;
+    color: white;
+    transform: scale(1.05);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-8">
+  
+  <!-- Header Section -->
+  <div class="text-center mb-12">
+    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+      🎉 Upcoming Events in Zambia
+    </h1>
+    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+      Discover amazing events happening near you. From concerts to conferences, find your next experience!
+    </p>
+  </div>
+
+  <!-- Search and Filter Section -->
+  <div class="search-container text-white mb-8">
+    <form method="GET" class="flex flex-col md:flex-row gap-4 items-center">
+      <div class="flex-1 w-full">
+        <input 
+          type="text" 
+          name="search" 
+          value="{{ search_query }}"
+          placeholder="Search events by name, description, or location..." 
+          class="w-full px-6 py-4 rounded-full text-gray-800 text-lg focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-30"
+        >
+      </div>
+      
+      <div class="flex gap-3">
+        <select name="category" class="px-6 py-4 rounded-full text-gray-800 focus:outline-none">
+          <option value="">All Categories</option>
+          {% for category in categories %}
+            <option value="{{ category.slug }}" {% if category.slug == category_filter %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+          {% endfor %}
+        </select>
+        
+        <button type="submit" class="bg-white text-purple-600 px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition-all">
+          <i class="fas fa-search mr-2"></i>Search
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Summary -->
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">
+        {% if search_query or category_filter %}
+          Search Results
+        {% else %}
+          All Upcoming Events
+        {% endif %}
+      </h2>
+      <p class="text-gray-600">
+        {{ total_events }} event{{ total_events|pluralize }} found
+        {% if search_query %}for "{{ search_query }}"{% endif %}
+        {% if category_filter %}in {{ category_filter|title }}{% endif %}
+      </p>
+    </div>
+    
+    {% if search_query or category_filter %}
+      <a href="{% url 'events:events_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">
+        <i class="fas fa-times mr-1"></i>Clear Filters
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- Events Grid -->
+  {% if events %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+      {% for event in events %}
+        <div class="event-card bg-white relative">
+          <!-- Category Badge -->
+          <div class="category-badge" style="background: 
+            {% if event.category.slug == 'music' %}#e91e63
+            {% elif event.category.slug == 'tech' %}#2196f3
+            {% elif event.category.slug == 'food' %}#ff9800
+            {% elif event.category.slug == 'sports' %}#9c27b0
+            {% else %}#607d8b{% endif %};">
+            {{ event.category.name }}
+          </div>
+          
+          <!-- Price Badge -->
+          <div class="price-badge">
+            K{{ event.price }}
+          </div>
+          
+          <!-- Event Image -->
+          {% if event.primary_image %}
+            <img src="{{ event.primary_image.url }}" alt="{{ event.title }}" class="event-image">
+          {% else %}
+            <div class="event-image bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+              <i class="fas fa-calendar-alt text-white text-4xl"></i>
+            </div>
+          {% endif %}
+          
+          <!-- Event Content -->
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{{ event.title }}</h3>
+            
+            <div class="space-y-2 mb-4 text-gray-600">
+              <div class="flex items-center">
+                <i class="fas fa-calendar text-blue-500 mr-2"></i>
+                <span>{{ event.date|date:"M d, Y" }}</span>
+                {% if event.time %}
+                  <span class="ml-2">at {{ event.time|time:"g:i A" }}</span>
+                {% endif %}
+              </div>
+              
+              <div class="flex items-center">
+                <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                <span class="truncate">{{ event.location }}</span>
+              </div>
+              
+              <div class="flex items-center">
+                <i class="fas fa-users text-green-500 mr-2"></i>
+                <span>{{ event.total_seats_left }} seats available</span>
+              </div>
+            </div>
+            
+            <p class="text-gray-600 mb-4 line-clamp-3">{{ event.description|truncatewords:20 }}</p>
+            
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+              <a href="{% url 'events:event_detail' event.id %}" 
+                 class="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all">
+                View Details
+              </a>
+              
+              {% if user.is_authenticated %}
+                <a href="{% url 'events:select_seat' event.id %}" 
+                   class="flex-1 bg-green-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-green-700 transition-all">
+                  Book Now
+                </a>
+              {% else %}
+                <a href="{% url 'events:login' %}" 
+                   class="flex-1 bg-gray-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-gray-700 transition-all">
+                  Login to Book
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- No Events Found -->
+    <div class="text-center py-16">
+      <div class="mb-8">
+        <i class="fas fa-calendar-times text-6xl text-gray-400 mb-4"></i>
+        <h3 class="text-2xl font-bold text-gray-700 mb-2">No Events Found</h3>
+        <p class="text-gray-500 max-w-md mx-auto">
+          {% if search_query or category_filter %}
+            We couldn't find any events matching your criteria. Try adjusting your search or browse all events.
+          {% else %}
+            There are no upcoming events at the moment. Check back soon for new events!
+          {% endif %}
+        </p>
+      </div>
+      
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        {% if search_query or category_filter %}
+          <a href="{% url 'events:events_list' %}" 
+             class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all">
+            View All Events
+          </a>
+        {% endif %}
+        
+        <a href="{% url 'events:categories_with_events' %}" 
+           class="bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-all">
+          Browse by Categories
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Call to Action -->
+  <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-center text-white">
+    <h3 class="text-2xl font-bold mb-4">Don't Miss Out!</h3>
+    <p class="text-lg mb-6">Subscribe to our newsletter and be the first to know about new events</p>
+    
+    <form method="post" action="{% url 'events:subscribe' %}" class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+      {% csrf_token %}
+      <input type="email" name="email" placeholder="Enter your email" 
+             class="flex-1 px-4 py-3 rounded-lg text-gray-800" required>
+      <button type="submit" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all">
+        Subscribe
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Auto-submit form when category changes
+  document.querySelector('select[name="category"]').addEventListener('change', function() {
+    this.form.submit();
+  });
+  
+  // Smooth scroll to results after search
+  {% if search_query or category_filter %}
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('.grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  {% endif %}
+</script>
+{% endblock %}

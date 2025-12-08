@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Payment Successful - Momenta{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 py-12 px-6">
+  <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-12 text-center">
+    
+    <div class="mb-8">
+      <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <i class="fas fa-clock text-yellow-600 text-6xl"></i>
+      </div>
+      <h1 class="text-4xl font-bold text-gray-800 mb-4">Payment Submitted!</h1>
+      <p class="text-xl text-yellow-600 font-semibold">⏳ Awaiting Admin Confirmation</p>
+      <p class="text-gray-600 mt-2">Your payment is being reviewed by our team</p>
+    </div>
+
+    <div class="bg-gray-50 rounded-2xl p-8 mb-8 text-left">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Booking Details</h2>
+      
+      <div class="space-y-4">
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Event</span>
+          <span class="font-semibold text-gray-800">{{ event.title }}</span>
+        </div>
+        
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Date</span>
+          <span class="font-semibold text-gray-800">{{ event.date|date:"F j, Y" }}</span>
+        </div>
+        
+        {% if event.time %}
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Time</span>
+          <span class="font-semibold text-gray-800">{{ event.time|time:"g:i A" }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Location</span>
+          <span class="font-semibold text-gray-800">{{ event.location }}</span>
+        </div>
+        
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Ticket Type</span>
+          <span class="font-semibold text-gray-800 uppercase">{{ ticket_type }}</span>
+        </div>
+        
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Number of Tickets</span>
+          <span class="font-semibold text-gray-800">{{ tickets }}</span>
+        </div>
+        
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Total Amount</span>
+          <span class="font-semibold text-green-600 text-xl">K{{ total_price }}</span>
+        </div>
+        
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Payment Method</span>
+          <span class="font-semibold text-gray-800">{{ payment_method }}</span>
+        </div>
+        
+        {% if payment_details.phone %}
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Phone Number</span>
+          <span class="font-semibold text-gray-800">{{ payment_details.phone }}</span>
+        </div>
+        {% endif %}
+        
+        {% if booking %}
+        <div class="flex justify-between items-center pb-3 border-b">
+          <span class="text-gray-600">Booking Reference</span>
+          <span class="font-semibold text-blue-600">#{{ booking.id|stringformat:"06d" }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="bg-yellow-50 rounded-2xl p-6 mb-8 border-2 border-yellow-200">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">⏳ Payment Pending Confirmation</h3>
+      <p class="text-sm text-gray-700 mb-3">
+        <i class="fas fa-info-circle text-yellow-600"></i> 
+        Your payment has been submitted and is awaiting admin approval.
+      </p>
+      <p class="text-sm text-gray-700 mb-3">
+        <i class="fas fa-envelope text-blue-600"></i> 
+        You will receive a confirmation email once your payment is approved.
+      </p>
+      <p class="text-sm text-gray-700 mb-3">
+        <i class="fas fa-ticket-alt text-blue-600"></i> 
+        <strong>Booking Reference: #{{ booking.id|stringformat:"06d" }}</strong> - Please save this number!
+      </p>
+      <p class="text-sm text-gray-700">
+        <i class="fas fa-clock text-yellow-600"></i> 
+        Approval usually takes 1-24 hours. Check your email for updates.
+      </p>
+    </div>
+
+    <div class="flex gap-4 justify-center">
+      <a href="{% url 'events:home' %}" 
+         class="bg-blue-600 text-white px-8 py-4 rounded-xl hover:bg-blue-700 transition font-semibold">
+        <i class="fas fa-home mr-2"></i> Back to Home
+      </a>
+      <a href="{% url 'events:categories_with_events' %}" 
+         class="bg-gray-200 text-gray-800 px-8 py-4 rounded-xl hover:bg-gray-300 transition font-semibold">
+        <i class="fas fa-calendar mr-2"></i> Browse More Events
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

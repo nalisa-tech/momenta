@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Book Ticket{% endblock %}
+
+{% block content %}
+
+<h1 class="page-title">Book Ticket for {{ event.name }}</h1>
+
+<form method="POST" class="booking-form">
+    {% csrf_token %}
+
+    <label>Your Name</label>
+    <input type="text" name="name" placeholder="Enter your full name" required>
+
+    <label>Your Email</label>
+    <input type="email" name="email" placeholder="example@email.com" required>
+
+    <label>Number of Tickets</label>
+    <input type="number" name="tickets" min="1" value="1" required>
+
+    <label>Payment Method</label>
+    <select name="payment" required>
+        <option value="">Select Payment</option>
+        <option value="Airtel Money">Airtel Money - Send to 0978308101</option>
+        <option value="MTN Mobile Money">MTN Mobile Money - Send to 0767675748</option>
+        <option value="Zamtel Money">Zamtel Money - Send to 0956183839</option>
+        <option value="Bank Transfer">Bank Transfer - Standard Chartered</option>
+    </select>
+
+    <!-- Payment Instructions -->
+    <div class="payment-instructions" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #007bff;">
+        <h4 style="margin-top: 0; color: #007bff;">💳 Payment Instructions</h4>
+        <div class="payment-option" id="airtel-info" style="display: none;">
+            <p><strong>📱 Airtel Money:</strong></p>
+            <p>Send payment to: <strong>0978308101</strong></p>
+            <p>Reference: Your name + Event name</p>
+        </div>
+        <div class="payment-option" id="mtn-info" style="display: none;">
+            <p><strong>📱 MTN Mobile Money:</strong></p>
+            <p>Send payment to: <strong>0767675748</strong></p>
+            <p>Reference: Your name + Event name</p>
+        </div>
+        <div class="payment-option" id="zamtel-info" style="display: none;">
+            <p><strong>📱 Zamtel Money:</strong></p>
+            <p>Send payment to: <strong>0956183839</strong></p>
+            <p>Reference: Your name + Event name</p>
+        </div>
+        <div class="payment-option" id="bank-info" style="display: none;">
+            <p><strong>🏦 Bank Transfer:</strong></p>
+            <p>Bank: Standard Chartered Bank</p>
+            <p>Account: 0152516138300</p>
+            <p>Name: Momenta</p>
+        </div>
+    </div>
+
+    <button type="submit" class="btn large">Confirm Booking</button>
+</form>
+
+<a href="{% url 'event_detail' event.id %}" class="btn small">⬅ Back</a>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentSelect = document.querySelector('select[name="payment"]');
+    const paymentOptions = document.querySelectorAll('.payment-option');
+    
+    paymentSelect.addEventListener('change', function() {
+        // Hide all payment options
+        paymentOptions.forEach(option => option.style.display = 'none');
+        
+        // Show selected payment option
+        const selectedValue = this.value;
+        if (selectedValue.includes('Airtel')) {
+            document.getElementById('airtel-info').style.display = 'block';
+        } else if (selectedValue.includes('MTN')) {
+            document.getElementById('mtn-info').style.display = 'block';
+        } else if (selectedValue.includes('Zamtel')) {
+            document.getElementById('zamtel-info').style.display = 'block';
+        } else if (selectedValue.includes('Bank')) {
+            document.getElementById('bank-info').style.display = 'block';
+        }
+    });
+});
+</script>
+
+{% endblock %}

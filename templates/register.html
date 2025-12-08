@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Register - Momenta{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        
+        <!-- Logo and Header -->
+        <div class="text-center">
+            <div class="mx-auto h-20 w-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                <span class="text-4xl">🎉</span>
+            </div>
+            <h2 class="mt-6 text-4xl font-extrabold text-gray-900">
+                Join <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Momenta</span>
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Create your account and start booking events
+            </p>
+        </div>
+
+        <!-- Register Form -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+            
+            <!-- Error Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                            <p class="text-red-700">{{ message }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+                
+                <!-- Username Field -->
+                <div>
+                    <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-user text-purple-600 mr-2"></i>Username
+                    </label>
+                    <input 
+                        id="username"
+                        name="username" 
+                        type="text" 
+                        required 
+                        class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                        placeholder="Choose a username"
+                    >
+                </div>
+
+                <!-- Email Field -->
+                <div>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-envelope text-purple-600 mr-2"></i>Email Address
+                    </label>
+                    <input 
+                        id="email"
+                        name="email" 
+                        type="email" 
+                        required 
+                        class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                        placeholder="your.email@example.com"
+                    >
+                </div>
+
+                <!-- Phone Number Field -->
+                <div>
+                    <label for="phone_number" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-phone text-purple-600 mr-2"></i>Phone Number
+                    </label>
+                    <input 
+                        id="phone_number"
+                        name="phone_number" 
+                        type="tel" 
+                        required 
+                        pattern="[0-9]{10}"
+                        class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                        placeholder="0971234567"
+                    >
+                    <p class="mt-1 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>Enter 10-digit Zambian phone number
+                    </p>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password1" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-lock text-purple-600 mr-2"></i>Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            id="password1"
+                            name="password1" 
+                            type="password" 
+                            required 
+                            class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                            placeholder="Create a strong password"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="togglePassword('password1', 'icon1')"
+                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700"
+                        >
+                            <i id="icon1" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div>
+                    <label for="password2" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-lock text-purple-600 mr-2"></i>Confirm Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            id="password2"
+                            name="password2" 
+                            type="password" 
+                            required 
+                            class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                            placeholder="Confirm your password"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="togglePassword('password2', 'icon2')"
+                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700"
+                        >
+                            <i id="icon2" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="flex items-start">
+                    <input 
+                        id="terms" 
+                        name="terms" 
+                        type="checkbox" 
+                        required
+                        class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded mt-1"
+                    >
+                    <label for="terms" class="ml-2 block text-sm text-gray-700">
+                        I agree to the <a href="#" class="text-purple-600 hover:text-purple-500 font-medium">Terms and Conditions</a> and <a href="#" class="text-purple-600 hover:text-purple-500 font-medium">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <!-- Register Button -->
+                <div>
+                    <button 
+                        type="submit" 
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <i class="fas fa-user-plus text-white"></i>
+                        </span>
+                        Create Account
+                    </button>
+                </div>
+            </form>
+
+            <!-- Divider -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-white text-gray-500">Already have an account?</span>
+                </div>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center">
+                <a 
+                    href="{% url 'events:login' %}" 
+                    class="inline-flex items-center justify-center w-full py-3 px-4 border-2 border-purple-600 text-lg font-semibold rounded-xl text-purple-600 bg-white hover:bg-purple-50 transition-all duration-300 transform hover:scale-105"
+                >
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Sign In Instead
+                </a>
+            </div>
+        </div>
+
+        <!-- Benefits -->
+        <div class="mt-8 bg-white rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">Why Join Momenta?</h3>
+            <div class="space-y-3">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-ticket-alt text-purple-600"></i>
+                    </div>
+                    <p class="ml-4 text-sm text-gray-700">Easy event booking and ticket management</p>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 bg-pink-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-mobile-alt text-pink-600"></i>
+                    </div>
+                    <p class="ml-4 text-sm text-gray-700">Pay with MTN, Airtel, or Zamtel mobile money</p>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-bell text-blue-600"></i>
+                    </div>
+                    <p class="ml-4 text-sm text-gray-700">Get instant booking confirmations via email</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="text-center">
+            <a href="{% url 'events:home' %}" class="text-sm text-gray-600 hover:text-purple-600 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId, iconId) {
+    const passwordInput = document.getElementById(inputId);
+    const passwordIcon = document.getElementById(iconId);
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordIcon.classList.remove('fa-eye');
+        passwordIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        passwordIcon.classList.remove('fa-eye-slash');
+        passwordIcon.classList.add('fa-eye');
+    }
+}
+
+// Password strength indicator
+document.getElementById('password1').addEventListener('input', function() {
+    const password = this.value;
+    let strength = 0;
+    
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    
+    // You can add visual feedback here
+});
+
+// Add animation on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.style.opacity = '0';
+    form.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+        form.style.transition = 'all 0.5s ease-out';
+        form.style.opacity = '1';
+        form.style.transform = 'translateY(0)';
+    }, 100);
+});
+</script>
+
+{% endblock %}
