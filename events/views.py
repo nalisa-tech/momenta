@@ -7,7 +7,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db import models
 from .models import Event, Category, Booking, PaymentTransaction
-import requests
 import json
 import time
 import random
