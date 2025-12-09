@@ -22,10 +22,39 @@ import random
 # CATEGORY LIST PAGE
 # ==============================
 def categories_with_events(request):
-    categories = Category.objects.prefetch_related("events").all()
-    return render(request, "events/categories_with_events.html", {
-        "categories": categories
-    })
+    """Display all events grouped by categories (same as browse events)"""
+    from django.utils import timezone
+    from django.db.models import Q
+    
+    # Get all upcoming events
+    events = Event.objects.filter(date__gte=timezone.now().date()).order_by('date')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        events = events.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(location__icontains=search_query)
+        )
+    
+    # Category filtering
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        events = events.filter(category__slug=category_filter)
+    
+    # Get all categories for filter dropdown
+    categories = Category.objects.all()
+    
+    context = {
+        'events': events,
+        'categories': categories,
+        'search_query': search_query,
+        'category_filter': category_filter,
+        'total_events': events.count()
+    }
+    
+    return render(request, 'events/events_list.html', context)
 
 
 # ==============================
