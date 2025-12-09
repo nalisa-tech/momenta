@@ -458,7 +458,7 @@ def send_booking_confirmation_email(booking, event, payment_method, payment_deta
     print("=" * 60)
     try:
         user = booking.user
-        subject = f'Booking Confirmation - {event.title}'
+        subject = f'Payment Pending - {event.title}'
         
         # Create email message
         message = f"""
@@ -466,7 +466,7 @@ Dear {user.get_full_name() or user.username},
 
 Thank you for booking with Momenta!
 
-BOOKING CONFIRMATION
+BOOKING RECEIVED (PENDING CONFIRMATION)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Booking Reference: #{booking.id:06d}
@@ -485,14 +485,15 @@ PAYMENT INFORMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Payment Method: {payment_method}
 {'Phone Number: ' + payment_details.get('phone', '') if payment_details.get('phone') else ''}
-Payment Status: CONFIRMED ✓
+Payment Status: ⏳ PENDING ADMIN CONFIRMATION
 
 IMPORTANT INFORMATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Please arrive at least 30 minutes before the event starts
-• Bring a valid ID for verification
+⚠️ Your payment is being verified by our admin team.
+• You will receive a confirmation email once payment is approved
 • Your booking reference: #{booking.id:06d}
-• Present this email or your booking reference at the entrance
+• Please keep this reference for tracking
+• Tickets will be valid only after admin confirms payment
 
 ORGANIZER CONTACT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
