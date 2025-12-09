@@ -1,270 +1,47 @@
 {% extends "base.html" %}
-{% load static %}
 
-{% block title %}Book Tickets - {{ event.title }}{% endblock %}
+{% block title %}Select Seat{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 py-8">
-    <div class="max-w-6xl mx-auto px-4">
+<div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-6 mt-8">
+    <h2 class="text-2xl font-bold text-center mb-4">{{ event.title }}</h2>
+    <p class="text-center text-gray-600 mb-6">{{ event.date }} • {{ event.location }}</p>
+
+    <form method="post" action="{% url 'events:payment_page' event.id %}">
+        {% csrf_token %}
+
+        <label class="block font-semibold mb-2">Choose Ticket Type:</label>
+
+        <select name="ticket_type" class="w-full border rounded-lg p-2 mb-4" required>
+            <option value="" disabled selected>Choose ticket type...</option>
+            {% if event.vip_available > 0 %}
+                <option value="vip">VIP - K1500 ({{ event.vip_available }} left)</option>
+            {% endif %}
+
+            {% if event.gold_available > 0 %}
+                <option value="gold">Gold - K850 ({{ event.gold_available }} left)</option>
+            {% endif %}
+
+            {% if event.standard_available > 0 %}
+                <option value="standard">Standard - K450 ({{ event.standard_available }} left)</option>
+            {% endif %}
+        </select>
         
-        <!-- Event Header -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-            <div class="bg-gradient-to-r from-green-600 to-green-800 p-6 text-white">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold mb-2">{{ event.title }}</h1>
-                        <div class="flex items-center gap-6 text-green-100">
-                            <span><i class="far fa-calendar-alt mr-2"></i>{{ event.date|date:"l, F j, Y" }}</span>
-                            {% if event.time %}
-                            <span><i class="far fa-clock mr-2"></i>{{ event.time|time:"g:i A" }}</span>
-                            {% endif %}
-                            <span><i class="fas fa-map-marker-alt mr-2"></i>{{ event.location }}</span>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2">
-                            <p class="text-sm text-green-100">Total Seats Available</p>
-                            <p class="text-3xl font-bold">{{ event.total_seats_left }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% if event.vip_seats_left <= 0 and event.gold_seats_left <= 0 and event.standard_seats_left <= 0 %}
+            <p class="text-red-600 text-center mb-4">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Sorry, this event is sold out!
+            </p>
+        {% endif %}
 
-        <form method="post" action="{% url 'events:payment_page' event.id %}" id="ticket-form">
-            {% csrf_token %}
-            <input type="hidden" name="ticket_type" id="selected-ticket-type" required>
-            <input type="hidden" name="tickets" id="selected-quantity" value="1">
+        <label class="block font-semibold mb-2">Number of Tickets:</label>
+        <input type="number" name="tickets" min="1" value="1"
+               class="w-full border rounded-lg p-2 mb-4">
 
-            <div class="grid lg:grid-cols-3 gap-8">
-                
-                <!-- Ticket Selection -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-2xl shadow-lg p-8">
-                        <h2 class="text-2xl font-bold mb-6 flex items-center">
-                            <i class="fas fa-ticket-alt text-green-600 mr-3"></i>
-                            Select Your Tickets
-                        </h2>
-
-                        {% if event.total_seats_left <= 0 %}
-                            <div class="bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center">
-                                <i class="fas fa-exclamation-triangle text-red-600 text-5xl mb-4"></i>
-                                <h3 class="text-2xl font-bold text-red-800 mb-2">SOLD OUT</h3>
-                                <p class="text-red-600">All tickets for this event have been sold.</p>
-                            </div>
-                        {% else %}
-                            <!-- Stadium Seating Visual -->
-                            <div class="mb-8 bg-gradient-to-b from-green-100 to-green-50 rounded-xl p-6">
-                                <div class="text-center mb-4">
-                                    <div class="inline-block bg-green-600 text-white px-6 py-2 rounded-full text-sm font-bold">
-                                        <i class="fas fa-futbol mr-2"></i>PITCH
-                                    </div>
-                                </div>
-                                
-                                <!-- Seating Sections -->
-                                <div class="grid grid-cols-3 gap-4 mt-6">
-                                    <!-- VIP Section -->
-                                    {% if event.vip_available > 0 %}
-                                    <div class="ticket-option bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg p-4 cursor-pointer hover:scale-105 transition-all border-4 border-transparent hover:border-yellow-700"
-                                         onclick="selectTicket('vip', 1500, {{ event.vip_available }})">
-                                        <div class="text-center text-white">
-                                            <i class="fas fa-crown text-3xl mb-2"></i>
-                                            <h3 class="font-bold text-lg">VIP</h3>
-                                            <p class="text-sm opacity-90">Front Row</p>
-                                            <p class="text-2xl font-bold mt-2">K1,500</p>
-                                            <p class="text-xs mt-1">{{ event.vip_available }} seats left</p>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="bg-gray-200 rounded-lg p-4 opacity-50">
-                                        <div class="text-center text-gray-500">
-                                            <i class="fas fa-crown text-3xl mb-2"></i>
-                                            <h3 class="font-bold text-lg">VIP</h3>
-                                            <p class="text-sm font-bold text-red-600 mt-2">SOLD OUT</p>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Gold Section -->
-                                    {% if event.gold_available > 0 %}
-                                    <div class="ticket-option bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg p-4 cursor-pointer hover:scale-105 transition-all border-4 border-transparent hover:border-orange-700"
-                                         onclick="selectTicket('gold', 850, {{ event.gold_available }})">
-                                        <div class="text-center text-white">
-                                            <i class="fas fa-star text-3xl mb-2"></i>
-                                            <h3 class="font-bold text-lg">GOLD</h3>
-                                            <p class="text-sm opacity-90">Premium View</p>
-                                            <p class="text-2xl font-bold mt-2">K850</p>
-                                            <p class="text-xs mt-1">{{ event.gold_available }} seats left</p>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="bg-gray-200 rounded-lg p-4 opacity-50">
-                                        <div class="text-center text-gray-500">
-                                            <i class="fas fa-star text-3xl mb-2"></i>
-                                            <h3 class="font-bold text-lg">GOLD</h3>
-                                            <p class="text-sm font-bold text-red-600 mt-2">SOLD OUT</p>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Standard Section -->
-                                    {% if event.standard_available > 0 %}
-                                    <div class="ticket-option bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg p-4 cursor-pointer hover:scale-105 transition-all border-4 border-transparent hover:border-blue-700"
-                                         onclick="selectTicket('standard', 450, {{ event.standard_available }})">
-                                        <div class="text-center text-white">
-                                            <i class="fas fa-users text-3xl mb-2"></i>
-                                            <h3 class="font-bold text-lg">STANDARD</h3>
-                                            <p class="text-sm opacity-90">General Admission</p>
-                                            <p class="text-2xl font-bold mt-2">K450</p>
-                                            <p class="text-xs mt-1">{{ event.standard_available }} seats left</p>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="bg-gray-200 rounded-lg p-4 opacity-50">
-                                        <div class="text-center text-gray-500">
-                                            <i class="fas fa-users text-3xl mb-2"></i>
-                                            <h3 class="font-bold text-lg">STANDARD</h3>
-                                            <p class="text-sm font-bold text-red-600 mt-2">SOLD OUT</p>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Quantity Selector -->
-                            <div id="quantity-selector" class="hidden">
-                                <h3 class="text-xl font-bold mb-4">Number of Tickets</h3>
-                                <div class="flex items-center justify-center gap-4 mb-6">
-                                    <button type="button" onclick="changeQuantity(-1)" 
-                                            class="w-12 h-12 bg-gray-200 hover:bg-gray-300 rounded-full text-xl font-bold transition">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                    <div class="text-center">
-                                        <div id="quantity-display" class="text-5xl font-bold text-green-600">1</div>
-                                        <p class="text-sm text-gray-600 mt-1">Tickets</p>
-                                    </div>
-                                    <button type="button" onclick="changeQuantity(1)" 
-                                            class="w-12 h-12 bg-gray-200 hover:bg-gray-300 rounded-full text-xl font-bold transition">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Order Summary -->
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-                        <h3 class="text-xl font-bold mb-4 flex items-center">
-                            <i class="fas fa-receipt text-green-600 mr-2"></i>
-                            Order Summary
-                        </h3>
-
-                        <div id="summary-content" class="text-center text-gray-400 py-8">
-                            <i class="fas fa-ticket-alt text-5xl mb-3"></i>
-                            <p>Select a ticket type to continue</p>
-                        </div>
-
-                        <div id="summary-details" class="hidden">
-                            <div class="space-y-3 mb-6">
-                                <div class="flex justify-between items-center pb-3 border-b">
-                                    <span class="text-gray-600">Ticket Type:</span>
-                                    <span id="summary-type" class="font-bold"></span>
-                                </div>
-                                <div class="flex justify-between items-center pb-3 border-b">
-                                    <span class="text-gray-600">Quantity:</span>
-                                    <span id="summary-quantity" class="font-bold">1</span>
-                                </div>
-                                <div class="flex justify-between items-center pb-3 border-b">
-                                    <span class="text-gray-600">Price per ticket:</span>
-                                    <span id="summary-price" class="font-bold"></span>
-                                </div>
-                            </div>
-
-                            <div class="bg-green-50 rounded-lg p-4 mb-6">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-lg font-semibold">Total:</span>
-                                    <span id="summary-total" class="text-3xl font-bold text-green-600"></span>
-                                </div>
-                            </div>
-
-                            <button type="submit" 
-                                    class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl py-4 font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                                <i class="fas fa-lock mr-2"></i>
-                                Proceed to Payment
-                            </button>
-
-                            <p class="text-xs text-gray-500 text-center mt-3">
-                                <i class="fas fa-shield-alt mr-1"></i>
-                                Secure payment processing
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
-    </div>
+        <button type="submit"
+            class="w-full bg-blue-600 text-white rounded-lg py-2 mt-4 hover:bg-blue-700">
+            Continue to Payment
+        </button>
+    </form>
 </div>
-
-<style>
-.ticket-option.selected {
-    border-color: #16a34a !important;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
-    transform: scale(1.05);
-}
-</style>
-
-<script>
-let selectedType = null;
-let selectedPrice = 0;
-let maxQuantity = 0;
-let currentQuantity = 1;
-
-function selectTicket(type, price, available) {
-    selectedType = type;
-    selectedPrice = price;
-    maxQuantity = available;
-    currentQuantity = 1;
-
-    // Update hidden inputs
-    document.getElementById('selected-ticket-type').value = type;
-    document.getElementById('selected-quantity').value = currentQuantity;
-
-    // Highlight selected ticket
-    document.querySelectorAll('.ticket-option').forEach(el => {
-        el.classList.remove('selected');
-    });
-    event.currentTarget.classList.add('selected');
-
-    // Show quantity selector
-    document.getElementById('quantity-selector').classList.remove('hidden');
-
-    // Update summary
-    updateSummary();
-}
-
-function changeQuantity(delta) {
-    const newQuantity = currentQuantity + delta;
-    if (newQuantity >= 1 && newQuantity <= maxQuantity) {
-        currentQuantity = newQuantity;
-        document.getElementById('quantity-display').textContent = currentQuantity;
-        document.getElementById('selected-quantity').value = currentQuantity;
-        updateSummary();
-    }
-}
-
-function updateSummary() {
-    const total = selectedPrice * currentQuantity;
-    
-    document.getElementById('summary-content').classList.add('hidden');
-    document.getElementById('summary-details').classList.remove('hidden');
-    
-    document.getElementById('summary-type').textContent = selectedType.toUpperCase();
-    document.getElementById('summary-quantity').textContent = currentQuantity;
-    document.getElementById('summary-price').textContent = `K${selectedPrice.toLocaleString()}`;
-    document.getElementById('summary-total').textContent = `K${total.toLocaleString()}`;
-}
-</script>
-
 {% endblock %}
