@@ -23,7 +23,14 @@ import random
 # ==============================
 def categories_with_events(request):
     """Display categories with events"""
-    categories = Category.objects.prefetch_related("events").all()
+    try:
+        categories = Category.objects.prefetch_related("events").all()
+    except Exception as e:
+        # Handle database table not existing
+        from django.contrib import messages
+        messages.error(request, "Database not properly initialized. Please contact administrator.")
+        categories = []
+    
     return render(request, "events/categories_with_events.html", {
         "categories": categories
     })

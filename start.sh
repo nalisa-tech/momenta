@@ -5,9 +5,9 @@ set -e
 
 echo "Starting Momenta Event Management System..."
 
-# Initialize database
-echo "Initializing database..."
-python init_db.py
+# Initialize database for Railway
+echo "Running Railway database setup..."
+python railway_setup.py
 
 # Collect static files
 echo "Collecting static files..."
