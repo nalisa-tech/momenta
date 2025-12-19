@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Event Facilities - Momenta{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">🏗️ Event Facilities</h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Discover professional venues and resources for your events across Zambia.
+        </p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 text-center">
+            <div class="text-4xl mb-2">🏢</div>
+            <div class="text-2xl font-bold">{{ total_venues }}</div>
+            <div class="text-blue-100">Premium Venues</div>
+        </div>
+
+        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6 text-center">
+            <div class="text-4xl mb-2">🔧</div>
+            <div class="text-2xl font-bold">{{ total_resources }}</div>
+            <div class="text-green-100">Professional Resources</div>
+        </div>
+
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-6 text-center">
+            <div class="text-4xl mb-2">🎯</div>
+            <div class="text-2xl font-bold">24/7</div>
+            <div class="text-purple-100">Support Available</div>
+        </div>
+    </div>
+
+    <!-- Venue Categories -->
+    <div class="mb-12">
+        <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">🏢 Available Venues</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl mb-4">🏟️</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Large Stadiums</h3>
+                <p class="text-gray-600 mb-4">Perfect for major events, concerts, and sports</p>
+                <p class="text-sm text-gray-500">Capacity: 10,000 - 60,000</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl mb-4">🏢</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Conference Centers</h3>
+                <p class="text-gray-600 mb-4">Professional venues for business events</p>
+                <p class="text-sm text-gray-500">Capacity: 200 - 3,000</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl mb-4">🎭</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Theaters & Halls</h3>
+                <p class="text-gray-600 mb-4">Intimate venues for cultural events</p>
+                <p class="text-sm text-gray-500">Capacity: 200 - 1,000</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resource Categories -->
+    <div class="mb-12">
+        <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">🔧 Professional Resources</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🎵</div>
+                <h4 class="font-semibold text-gray-800">Sound Systems</h4>
+                <p class="text-xs text-gray-600">Professional audio equipment</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">💡</div>
+                <h4 class="font-semibold text-gray-800">Lighting</h4>
+                <p class="text-xs text-gray-600">Stage and event lighting</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🎭</div>
+                <h4 class="font-semibold text-gray-800">Stages</h4>
+                <p class="text-xs text-gray-600">Portable stage platforms</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🪑</div>
+                <h4 class="font-semibold text-gray-800">Seating</h4>
+                <p class="text-xs text-gray-600">Chairs and seating solutions</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🛡️</div>
+                <h4 class="font-semibold text-gray-800">Security</h4>
+                <p class="text-xs text-gray-600">Professional security services</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🍽️</div>
+                <h4 class="font-semibold text-gray-800">Catering</h4>
+                <p class="text-xs text-gray-600">Kitchen and serving equipment</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🚌</div>
+                <h4 class="font-semibold text-gray-800">Transport</h4>
+                <p class="text-xs text-gray-600">Event transportation</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <div class="text-3xl mb-2">🔧</div>
+                <h4 class="font-semibold text-gray-800">Other</h4>
+                <p class="text-xs text-gray-600">Additional equipment</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-700 text-white rounded-lg p-8 text-center">
+        <h2 class="text-3xl font-bold mb-4">Ready to Plan Your Event?</h2>
+        <p class="text-xl text-blue-100 mb-6">
+            Browse our venues and resources to create the perfect event experience.
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+            <a href="{% url 'events:venues_list' %}" 
+               class="bg-white text-blue-600 py-3 px-6 rounded-lg font-semibold hover:bg-blue-50 transition duration-300">
+                🏢 Browse Venues
+            </a>
+            
+            <a href="{% url 'events:resources_list' %}" 
+               class="bg-white text-green-600 py-3 px-6 rounded-lg font-semibold hover:bg-green-50 transition duration-300">
+                🔧 Browse Resources
+            </a>
+        </div>
+    </div>
+
+    <!-- Contact Information -->
+    <div class="mt-12 bg-gray-50 rounded-lg p-6 text-center">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Need Help Planning Your Event?</h3>
+        <p class="text-gray-600 mb-4">
+            Our team is here to help you find the perfect venue and resources for your event.
+        </p>
+        <div class="flex justify-center space-x-6 text-sm text-gray-600">
+            <div>📧 nalisaimbula282@gmail.com</div>
+            <div>📱 +260 977 123 456</div>
+            <div>🕒 24/7 Support</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

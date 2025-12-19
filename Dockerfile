@@ -27,5 +27,9 @@ RUN python manage.py collectstatic --noinput
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["gunicorn", "event_system.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Create a startup script that runs migrations before starting the server
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Run the startup script
+CMD ["./start.sh"]

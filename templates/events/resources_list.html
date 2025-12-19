@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resources - Momenta{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">🔧 Event Resources</h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Professional equipment and services for your events. From sound systems to security personnel.
+        </p>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search Resources</label>
+                <input type="text" name="search" value="{{ search_query }}" 
+                       placeholder="Search by name, description, supplier..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Type Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Resource Type</label>
+                <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    {% for type_code, type_name in resource_types %}
+                        <option value="{{ type_code }}" {% if type_filter == type_code %}selected{% endif %}>{{ type_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Price Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <select name="price" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Prices</option>
+                    <option value="budget" {% if price_filter == 'budget' %}selected{% endif %}>Budget (< K500/day)</option>
+                    <option value="mid" {% if price_filter == 'mid' %}selected{% endif %}>Mid-range (K500 - K1,500/day)</option>
+                    <option value="premium" {% if price_filter == 'premium' %}selected{% endif %}>Premium (K1,500+/day)</option>
+                </select>
+            </div>
+
+            <!-- Search Button -->
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">
+                    🔍 Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="mb-6">
+        <p class="text-gray-600">
+            <span class="font-semibold">{{ total_resources }}</span> resource{{ total_resources|pluralize }} found
+            {% if search_query %}for "{{ search_query }}"{% endif %}
+        </p>
+    </div>
+
+    <!-- Resources Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for resource in resources %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
+            <!-- Resource Header -->
+            <div class="bg-gradient-to-r 
+                {% if resource.resource_type == 'sound' %}from-pink-500 to-red-600
+                {% elif resource.resource_type == 'lighting' %}from-orange-500 to-yellow-600
+                {% elif resource.resource_type == 'stage' %}from-purple-500 to-indigo-600
+                {% elif resource.resource_type == 'seating' %}from-blue-500 to-cyan-600
+                {% elif resource.resource_type == 'security' %}from-red-500 to-pink-600
+                {% elif resource.resource_type == 'catering' %}from-green-500 to-teal-600
+                {% elif resource.resource_type == 'transport' %}from-gray-500 to-blue-600
+                {% else %}from-gray-500 to-gray-600{% endif %}
+                text-white p-4">
+                
+                <!-- Resource Type Icon -->
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-2xl">
+                        {% if resource.resource_type == 'sound' %}🎵
+                        {% elif resource.resource_type == 'lighting' %}💡
+                        {% elif resource.resource_type == 'stage' %}🎭
+                        {% elif resource.resource_type == 'seating' %}🪑
+                        {% elif resource.resource_type == 'security' %}🛡️
+                        {% elif resource.resource_type == 'catering' %}🍽️
+                        {% elif resource.resource_type == 'transport' %}🚌
+                        {% else %}🔧{% endif %}
+                    </span>
+                    <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                        {{ resource.get_resource_type_display }}
+                    </span>
+                </div>
+                
+                <h3 class="text-lg font-bold">{{ resource.name }}</h3>
+            </div>
+
+            <!-- Resource Details -->
+            <div class="p-4">
+                <!-- Description -->
+                <p class="text-sm text-gray-600 mb-4">{{ resource.description|truncatechars:120 }}</p>
+
+                <!-- Pricing and Availability -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="text-center">
+                        <div class="text-xl font-bold text-green-600">K{{ resource.cost_per_day|floatformat:0 }}</div>
+                        <div class="text-xs text-gray-600">Per Day</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xl font-bold text-blue-600">{{ resource.quantity_available }}</div>
+                        <div class="text-xs text-gray-600">Available</div>
+                    </div>
+                </div>
+
+                <!-- Supplier Info -->
+                {% if resource.supplier_name %}
+                <div class="mb-4">
+                    <h4 class="font-semibold text-gray-800 text-sm mb-1">🏢 Supplier</h4>
+                    <p class="text-sm text-gray-600">{{ resource.supplier_name }}</p>
+                    {% if resource.supplier_phone %}
+                        <p class="text-sm text-gray-600">📱 {{ resource.supplier_phone }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2">
+                    {% if resource.supplier_phone %}
+                    <a href="tel:{{ resource.supplier_phone }}" 
+                       class="flex-1 bg-green-600 text-white text-center py-2 px-3 rounded-md hover:bg-green-700 transition duration-300 text-sm">
+                        📞 Call
+                    </a>
+                    {% endif %}
+                    
+                    <button onclick="showResourceDetails('{{ resource.name|escapejs }}', '{{ resource.description|escapejs }}', '{{ resource.cost_per_day }}', '{{ resource.quantity_available }}', '{{ resource.supplier_name|default:"N/A" }}', '{{ resource.supplier_phone|default:"N/A" }}')"
+                            class="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-md hover:bg-blue-700 transition duration-300 text-sm">
+                        📋 Details
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">🔧</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">No Resources Found</h3>
+            <p class="text-gray-600 mb-4">Try adjusting your search criteria or browse all resources.</p>
+            <a href="{% url 'events:resources_list' %}" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-300">
+                View All Resources
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Resource Categories Overview -->
+    {% if resources %}
+    <div class="mt-12 bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-6">📊 Resource Categories</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% regroup resources by resource_type as resource_groups %}
+            {% for group in resource_groups %}
+            <div class="text-center p-4 bg-white rounded-lg">
+                <div class="text-2xl mb-2">
+                    {% if group.grouper == 'sound' %}🎵
+                    {% elif group.grouper == 'lighting' %}💡
+                    {% elif group.grouper == 'stage' %}🎭
+                    {% elif group.grouper == 'seating' %}🪑
+                    {% elif group.grouper == 'security' %}🛡️
+                    {% elif group.grouper == 'catering' %}🍽️
+                    {% elif group.grouper == 'transport' %}🚌
+                    {% else %}🔧{% endif %}
+                </div>
+                <div class="font-semibold text-gray-800">{{ group.list.0.get_resource_type_display }}</div>
+                <div class="text-sm text-gray-600">{{ group.list|length }} resource{{ group.list|length|pluralize }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Resource Details Modal -->
+<div id="resourceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800"></h3>
+                <button onclick="closeResourceModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="modalContent" class="space-y-4">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            
+            <div class="mt-6 flex gap-2">
+                <button id="modalCallButton" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300">
+                    📞 Call Supplier
+                </button>
+                <button onclick="closeResourceModal()" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showResourceDetails(name, description, cost, quantity, supplier, phone) {
+    document.getElementById('modalTitle').textContent = name;
+    
+    const content = `
+        <div>
+            <h4 class="font-semibold text-gray-800 mb-2">📝 Description</h4>
+            <p class="text-gray-600 mb-4">${description}</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="text-center bg-gray-50 p-3 rounded">
+                <div class="text-xl font-bold text-green-600">K${parseFloat(cost).toLocaleString()}</div>
+                <div class="text-sm text-gray-600">Per Day</div>
+            </div>
+            <div class="text-center bg-gray-50 p-3 rounded">
+                <div class="text-xl font-bold text-blue-600">${quantity}</div>
+                <div class="text-sm text-gray-600">Available</div>
+            </div>
+        </div>
+        
+        <div>
+            <h4 class="font-semibold text-gray-800 mb-2">🏢 Supplier Information</h4>
+            <p class="text-gray-600"><strong>Name:</strong> ${supplier}</p>
+            <p class="text-gray-600"><strong>Phone:</strong> ${phone}</p>
+        </div>
+    `;
+    
+    document.getElementById('modalContent').innerHTML = content;
+    
+    // Update call button
+    const callButton = document.getElementById('modalCallButton');
+    if (phone !== 'N/A') {
+        callButton.href = `tel:${phone}`;
+        callButton.style.display = 'block';
+    } else {
+        callButton.style.display = 'none';
+    }
+    
+    document.getElementById('resourceModal').classList.remove('hidden');
+}
+
+function closeResourceModal() {
+    document.getElementById('resourceModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('resourceModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeResourceModal();
+    }
+});
+</script>
+{% endblock %}

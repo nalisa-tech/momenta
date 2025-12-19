@@ -22,7 +22,7 @@ import random
 # CATEGORY LIST PAGE
 # ==============================
 def categories_with_events(request):
-    """Display categories with their events"""
+    """Display categories with events"""
     categories = Category.objects.prefetch_related("events").all()
     return render(request, "events/categories_with_events.html", {
         "categories": categories
@@ -352,8 +352,11 @@ def process_mtn_payment(amount, phone_number):
         # Simulate processing time
         time.sleep(2)
         
-        # Simulate success/failure (90% success rate for demo)
-        success = random.random() > 0.1
+        # Simulate success/failure (90% success rate for demo, 100% for test numbers)
+        if phone_number in ['0977111111', '0977123456']:  # Test phone numbers
+            success = True
+        else:
+            success = random.random() > 0.1
         
         if success:
             print(f"MTN payment successful: Transaction ID MTN{random.randint(100000, 999999)}")
@@ -836,3 +839,252 @@ def events_list(request):
     }
     
     return render(request, 'events/events_list.html', context)
+
+# ==============================
+# VENUE MANAGEMENT VIEWS
+# ==============================
+
+def venues_list(request):
+    """Display all available venues with filtering"""
+    from .models import Venue
+    from django.db.models import Q
+    
+    # Get all venues
+    venues = Venue.objects.filter(is_available=True).order_by('name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        venues = venues.filter(
+            Q(name__icontains=search_query) |
+            Q(address__icontains=search_query) |
+            Q(facilities__icontains=search_query)
+        )
+    
+    # Capacity filtering
+    capacity_filter = request.GET.get('capacity', '')
+    if capacity_filter:
+        if capacity_filter == 'small':
+            venues = venues.filter(capacity__lt=1000)
+        elif capacity_filter == 'medium':
+            venues = venues.filter(capacity__gte=1000, capacity__lt=10000)
+        elif capacity_filter == 'large':
+            venues = venues.filter(capacity__gte=10000)
+    
+    # Price range filtering
+    price_filter = request.GET.get('price', '')
+    if price_filter:
+        if price_filter == 'budget':
+            venues = venues.filter(hourly_rate__lt=1000)
+        elif price_filter == 'mid':
+            venues = venues.filter(hourly_rate__gte=1000, hourly_rate__lt=2000)
+        elif price_filter == 'premium':
+            venues = venues.filter(hourly_rate__gte=2000)
+    
+    context = {
+        'venues': venues,
+        'search_query': search_query,
+        'capacity_filter': capacity_filter,
+        'price_filter': price_filter,
+        'total_venues': venues.count()
+    }
+    
+    return render(request, 'events/venues_list.html', context)
+
+def venue_detail(request, venue_id):
+    """Display detailed information about a specific venue"""
+    from .models import Venue, VenueBooking
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    
+    venue = get_object_or_404(Venue, id=venue_id)
+    
+    # Get upcoming bookings for this venue
+    upcoming_bookings = VenueBooking.objects.filter(
+        venue=venue,
+        start_datetime__gte=timezone.now(),
+        status__in=['confirmed', 'pending']
+    ).order_by('start_datetime')[:5]
+    
+    # Calculate availability for next 30 days
+    today = timezone.now().date()
+    availability_calendar = []
+    
+    for i in range(30):
+        check_date = today + timedelta(days=i)
+        bookings_on_date = VenueBooking.objects.filter(
+            venue=venue,
+            start_datetime__date=check_date,
+            status__in=['confirmed', 'pending']
+        ).count()
+        
+        availability_calendar.append({
+            'date': check_date,
+            'available': bookings_on_date == 0,
+            'bookings_count': bookings_on_date
+        })
+    
+    # Calculate venue statistics
+    total_bookings = VenueBooking.objects.filter(venue=venue).count()
+    total_revenue = sum(booking.total_cost for booking in VenueBooking.objects.filter(venue=venue))
+    
+    context = {
+        'venue': venue,
+        'upcoming_bookings': upcoming_bookings,
+        'availability_calendar': availability_calendar,
+        'total_bookings': total_bookings,
+        'total_revenue': total_revenue,
+    }
+    
+    return render(request, 'events/venue_detail.html', context)
+
+def resources_list(request):
+    """Display all available resources with filtering"""
+    from .models import Resource
+    from django.db.models import Q
+    
+    # Get all available resources
+    resources = Resource.objects.filter(is_available=True).order_by('resource_type', 'name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        resources = resources.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(supplier_name__icontains=search_query)
+        )
+    
+    # Resource type filtering
+    type_filter = request.GET.get('type', '')
+    if type_filter:
+        resources = resources.filter(resource_type=type_filter)
+    
+    # Price range filtering
+    price_filter = request.GET.get('price', '')
+    if price_filter:
+        if price_filter == 'budget':
+            resources = resources.filter(cost_per_day__lt=500)
+        elif price_filter == 'mid':
+            resources = resources.filter(cost_per_day__gte=500, cost_per_day__lt=1500)
+        elif price_filter == 'premium':
+            resources = resources.filter(cost_per_day__gte=1500)
+    
+    # Get resource types for filter dropdown
+    resource_types = Resource.RESOURCE_TYPES
+    
+    context = {
+        'resources': resources,
+        'resource_types': resource_types,
+        'search_query': search_query,
+        'type_filter': type_filter,
+        'price_filter': price_filter,
+        'total_resources': resources.count()
+    }
+    
+    return render(request, 'events/resources_list.html', context)
+
+@login_required
+def facilities_dashboard(request):
+    """Comprehensive facilities management dashboard - Staff only"""
+    # Check if user is staff or superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied. Staff privileges required.')
+        return redirect('events:home')
+    from .models import Venue, Resource, VenueBooking, ResourceAllocation
+    from django.utils import timezone
+    from django.db.models import Sum, Count
+    from datetime import datetime, timedelta
+    
+    # Venue statistics
+    total_venues = Venue.objects.filter(is_available=True).count()
+    venue_bookings_today = VenueBooking.objects.filter(
+        start_datetime__date=timezone.now().date(),
+        status__in=['confirmed', 'pending']
+    ).count()
+    
+    # Resource statistics
+    total_resources = Resource.objects.filter(is_available=True).count()
+    resource_allocations_today = ResourceAllocation.objects.filter(
+        start_date__lte=timezone.now().date(),
+        end_date__gte=timezone.now().date(),
+        status__in=['confirmed', 'delivered']
+    ).count()
+    
+    # Recent bookings and allocations
+    recent_venue_bookings = VenueBooking.objects.select_related('venue', 'event').order_by('-created_at')[:5]
+    recent_resource_allocations = ResourceAllocation.objects.select_related('resource', 'event').order_by('-created_at')[:5]
+    
+    # Upcoming events with venue/resource needs
+    upcoming_events = Event.objects.filter(
+        date__gte=timezone.now().date()
+    ).order_by('date')[:10]
+    
+    # Resource utilization by type
+    resource_utilization = []
+    for resource_type, display_name in Resource.RESOURCE_TYPES:
+        total_resources_of_type = Resource.objects.filter(
+            resource_type=resource_type,
+            is_available=True
+        ).count()
+        
+        allocated_today = ResourceAllocation.objects.filter(
+            resource__resource_type=resource_type,
+            start_date__lte=timezone.now().date(),
+            end_date__gte=timezone.now().date(),
+            status__in=['confirmed', 'delivered']
+        ).count()
+        
+        utilization_rate = (allocated_today / total_resources_of_type * 100) if total_resources_of_type > 0 else 0
+        
+        resource_utilization.append({
+            'type': resource_type,
+            'display_name': display_name,
+            'total': total_resources_of_type,
+            'allocated': allocated_today,
+            'utilization_rate': utilization_rate
+        })
+    
+    # Venue capacity overview
+    venue_capacity_data = []
+    for venue in Venue.objects.filter(is_available=True).order_by('-capacity')[:10]:
+        bookings_this_month = VenueBooking.objects.filter(
+            venue=venue,
+            start_datetime__month=timezone.now().month,
+            start_datetime__year=timezone.now().year,
+            status__in=['confirmed', 'completed']
+        ).count()
+        
+        venue_capacity_data.append({
+            'venue': venue,
+            'bookings_this_month': bookings_this_month
+        })
+    
+    context = {
+        'total_venues': total_venues,
+        'total_resources': total_resources,
+        'venue_bookings_today': venue_bookings_today,
+        'resource_allocations_today': resource_allocations_today,
+        'recent_venue_bookings': recent_venue_bookings,
+        'recent_resource_allocations': recent_resource_allocations,
+        'upcoming_events': upcoming_events,
+        'resource_utilization': resource_utilization,
+        'venue_capacity_data': venue_capacity_data,
+    }
+    
+    return render(request, 'events/facilities_dashboard.html', context)
+
+def facilities_public(request):
+    """Public facilities overview page"""
+    from .models import Venue, Resource
+    
+    # Basic statistics for public display
+    total_venues = Venue.objects.filter(is_available=True).count()
+    total_resources = Resource.objects.filter(is_available=True).count()
+    
+    context = {
+        'total_venues': total_venues,
+        'total_resources': total_resources,
+    }
+    
+    return render(request, 'events/facilities_public.html', context)

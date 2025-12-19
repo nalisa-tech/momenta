@@ -33,6 +33,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'events.admin.admin_dashboard_context',
             ],
         },
     },
@@ -53,11 +54,19 @@ INSTALLED_APPS = [
 LOGIN_URL = '/login/'
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
+# --- Developer Tools (Only in DEBUG mode) ---
+if DEBUG:
+    INSTALLED_APPS += [
+        'debug_toolbar',
+        'django_extensions',
+        'silk',
+    ]
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # For static files in production
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -65,6 +74,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# --- Developer Tools Middleware (Only in DEBUG mode) ---
+if DEBUG:
+    MIDDLEWARE = [
+        'silk.middleware.SilkyMiddleware',  # Performance profiling
+        'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug toolbar
+    ] + MIDDLEWARE
 
 ROOT_URLCONF = 'event_system.urls'
 WSGI_APPLICATION = 'event_system.wsgi.application'
@@ -162,3 +178,86 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Session settings
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+    },
+}
+
+# ============================
+# DEVELOPER TOOLS CONFIGURATION
+# ============================
+
+if DEBUG:
+    # --- Django Debug Toolbar Configuration ---
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: True,  # Always show in debug mode
+        'SHOW_COLLAPSED': False,
+        'SHOW_TEMPLATE_CONTEXT': True,
+        'ENABLE_STACKTRACES': True,
+    }
+    
+    # Internal IPs for debug toolbar
+    INTERNAL_IPS = [
+        '127.0.0.1',
+        'localhost',
+    ]
+    
+    # --- Django Silk Configuration (Performance Profiling) ---
+    SILKY_PYTHON_PROFILER = True
+    SILKY_PYTHON_PROFILER_BINARY = True
+    SILKY_PYTHON_PROFILER_RESULT_PATH = BASE_DIR / 'profiles'
+    SILKY_INTERCEPT_PERCENT = 100  # Profile 100% of requests in debug mode
+    SILKY_MAX_REQUEST_BODY_SIZE = 1024 * 1024  # 1MB
+    SILKY_MAX_RESPONSE_BODY_SIZE = 1024 * 1024  # 1MB
+    SILKY_META = True
+    
+    # --- Django Extensions Configuration ---
+    SHELL_PLUS_PRINT_SQL = True
+    SHELL_PLUS_PRINT_SQL_TRUNCATE = 1000
+    
+    # --- Enhanced Logging for Development ---
+    LOGGING['loggers'] = {
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'events': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'silk': {
+            'level': 'INFO',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+    }
+    
+    # --- Performance Monitoring ---
+    PERFORMANCE_MONITORING = {
+        'ENABLED': True,
+        'SLOW_QUERY_THRESHOLD': 0.5,  # Log queries slower than 500ms
+        'SLOW_REQUEST_THRESHOLD': 2.0,  # Log requests slower than 2 seconds
+    }
+    
+    print("Developer Tools Enabled:")
+    print("   - Django Debug Toolbar")
+    print("   - Django Silk (Performance Profiling)")
+    print("   - Django Extensions")
+    print("   - Enhanced SQL Logging")
+    print("   - Performance Monitoring")

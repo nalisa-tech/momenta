@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from decimal import Decimal
 
 
 # ============================
@@ -227,3 +228,122 @@ class PaymentTransaction(models.Model):
     
     def __str__(self):
         return f"{self.transaction_id} - {self.get_payment_method_display()} - {self.status}"
+
+# ============================
+# VENUE MODEL
+# ============================
+class Venue(models.Model):
+    name = models.CharField(max_length=200, help_text="Venue name (e.g., Heroes Stadium)")
+    address = models.TextField(help_text="Full address of the venue")
+    capacity = models.IntegerField(help_text="Maximum capacity")
+    contact_person = models.CharField(max_length=100, blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    contact_email = models.EmailField(blank=True)
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, help_text="Cost per hour in Kwacha")
+    facilities = models.TextField(blank=True, help_text="Available facilities (parking, sound system, etc.)")
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.name} (Capacity: {self.capacity})"
+    
+    class Meta:
+        ordering = ['name']
+
+# ============================
+# RESOURCE MODEL
+# ============================
+class Resource(models.Model):
+    RESOURCE_TYPES = [
+        ('sound', 'Sound System'),
+        ('lighting', 'Lighting Equipment'),
+        ('stage', 'Stage/Platform'),
+        ('seating', 'Additional Seating'),
+        ('security', 'Security Personnel'),
+        ('catering', 'Catering Equipment'),
+        ('transport', 'Transportation'),
+        ('other', 'Other'),
+    ]
+    
+    name = models.CharField(max_length=200, help_text="Resource name")
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPES)
+    description = models.TextField(blank=True)
+    cost_per_day = models.DecimalField(max_digits=10, decimal_places=2, help_text="Cost per day in Kwacha")
+    quantity_available = models.IntegerField(default=1, help_text="How many units available")
+    supplier_name = models.CharField(max_length=100, blank=True)
+    supplier_phone = models.CharField(max_length=20, blank=True)
+    is_available = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_resource_type_display()})"
+    
+    class Meta:
+        ordering = ['resource_type', 'name']
+# ============================
+# VENUE BOOKING MODEL
+# ============================
+class VenueBooking(models.Model):
+    BOOKING_STATUS = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    ]
+    
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name='venue_booking')
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='bookings')
+    start_datetime = models.DateTimeField(help_text="Event start date and time")
+    end_datetime = models.DateTimeField(help_text="Event end date and time")
+    setup_hours = models.IntegerField(default=2, help_text="Hours needed for setup before event")
+    cleanup_hours = models.IntegerField(default=1, help_text="Hours needed for cleanup after event")
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    status = models.CharField(max_length=20, choices=BOOKING_STATUS, default='pending')
+    notes = models.TextField(blank=True, help_text="Special requirements or notes")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        # Calculate total cost based on duration and venue hourly rate
+        if self.start_datetime and self.end_datetime and self.venue:
+            duration_hours = (self.end_datetime - self.start_datetime).total_seconds() / 3600
+            total_hours = duration_hours + self.setup_hours + self.cleanup_hours
+            self.total_cost = Decimal(str(total_hours)) * self.venue.hourly_rate
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.venue.name} - {self.event.title}"
+    
+    class Meta:
+        ordering = ['-start_datetime']
+# ============================
+# RESOURCE ALLOCATION MODEL
+# ============================
+class ResourceAllocation(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='resource_allocations')
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='allocations')
+    quantity_needed = models.IntegerField(default=1, help_text="How many units needed")
+    start_date = models.DateField(help_text="When resource is needed from")
+    end_date = models.DateField(help_text="When resource is needed until")
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    status = models.CharField(max_length=20, choices=[
+        ('requested', 'Requested'),
+        ('confirmed', 'Confirmed'),
+        ('delivered', 'Delivered'),
+        ('returned', 'Returned'),
+        ('cancelled', 'Cancelled'),
+    ], default='requested')
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        # Calculate total cost based on duration and resource daily rate
+        if self.start_date and self.end_date and self.resource:
+            duration_days = (self.end_date - self.start_date).days + 1
+            self.total_cost = duration_days * self.resource.cost_per_day * self.quantity_needed
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.resource.name} for {self.event.title}"
+    
+    class Meta:
+        ordering = ['-created_at']

@@ -1,5 +1,6 @@
 # events/urls.py
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
 from . import views
 
 app_name = "events"
@@ -19,15 +20,24 @@ urlpatterns = [
     path("payment/<int:event_id>/", views.payment_page, name="payment_page"),
     
     # Admin payment actions (accessible from admin interface)
-    path("payment/<int:payment_id>/approve/", views.approve_payment, name="approve_payment"),
-    path("payment/<int:payment_id>/reject/", views.reject_payment, name="reject_payment"),
+    path("admin/approve-payment/<int:payment_id>/", views.approve_payment, name="approve_payment"),
+    path("admin/reject-payment/<int:payment_id>/", views.reject_payment, name="reject_payment"),
     
-    # User profile (must come before category_detail to avoid conflict)
+    # User profile
     path("profile/", views.user_profile, name="profile"),
     
     # Newsletter subscription
     path("subscribe/", views.subscribe_newsletter, name="subscribe"),
     
+    # Venue and Resource Management
+    path("venues/", views.venues_list, name="venues_list"),
+    path("venue/<int:venue_id>/", views.venue_detail, name="venue_detail"),
+    path("resources/", views.resources_list, name="resources_list"),
+    path("facilities/", views.facilities_public, name="facilities_public"),
+    path("admin/facilities/", views.facilities_dashboard, name="facilities_dashboard"),
+    
     # NEW: One dynamic URL for ALL categories (must be last as it's a catch-all)
     path("<slug:slug>/", views.category_detail, name="category_detail"),
 ]
+
+# Developer tools URLs are handled in main urls.py

@@ -56,7 +56,7 @@ def test_html_email():
                     <h3>📊 System Information:</h3>
                     <ul>
                         <li><strong>Email Backend:</strong> Gmail SMTP</li>
-                        <li><strong>From Address:</strong> tygayt625@gmail.com</li>
+                        <li><strong>From Address:</strong> nalisaimbula282@gmail.com</li>
                         <li><strong>Status:</strong> Active</li>
                     </ul>
                 </div>

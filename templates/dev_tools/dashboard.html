@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Developer Dashboard - Momenta{% endblock %}
+
+{% block styles %}
+<style>
+  .dev-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .dev-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .metric-card {
+    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+  }
+  
+  .query-item {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+  
+  .status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+  
+  .status-online { background-color: #28a745; }
+  .status-offline { background-color: #dc3545; }
+  
+  .dev-button {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    margin-right: 0.5rem;
+  }
+  
+  .dev-button:hover {
+    opacity: 0.9;
+  }
+  
+  .console-output {
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-family: 'Courier New', monospace;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-8">
+  
+  <!-- Header -->
+  <div class="dev-panel">
+    <h1 class="text-4xl font-bold mb-4">
+      🔧 Developer Dashboard
+    </h1>
+    <p class="text-xl opacity-90">
+      System monitoring, debugging tools, and performance metrics for Momenta Event Management System
+    </p>
+    
+    <!-- Quick Actions -->
+    <div class="mt-6">
+      <button class="dev-button" onclick="clearCache()">Clear Cache</button>
+      <button class="dev-button" onclick="refreshStatus()">Refresh Status</button>
+      <button class="dev-button" onclick="toggleConsole()">Toggle Console</button>
+      <a href="{% url 'admin:index' %}" class="dev-button" style="text-decoration: none;">Django Admin</a>
+      {% if settings_debug %}
+      <a href="/silk/" class="dev-button" style="text-decoration: none;">Performance Profiler</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-6">
+    
+    <!-- System Information -->
+    <div class="dev-card">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">
+        <i class="fas fa-server text-blue-600"></i> System Information
+      </h2>
+      
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="font-semibold">Python Version:</span>
+          <span class="text-sm">{{ system_info.python_version|truncatechars:20 }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Django Version:</span>
+          <span>{{ system_info.django_version }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Debug Mode:</span>
+          <span class="{% if system_info.debug_mode %}text-green-600{% else %}text-red-600{% endif %}">
+            <span class="status-indicator {% if system_info.debug_mode %}status-online{% else %}status-offline{% endif %}"></span>
+            {{ system_info.debug_mode|yesno:"Enabled,Disabled" }}
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Database:</span>
+          <span class="text-sm">{{ system_info.database_engine|slice:"-10:" }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Installed Apps:</span>
+          <span>{{ system_info.installed_apps }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Statistics -->
+    <div class="dev-card">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">
+        <i class="fas fa-database text-green-600"></i> Database Statistics
+      </h2>
+      
+      <div class="grid grid-cols-2 gap-3">
+        <div class="metric-card">
+          <div class="text-2xl font-bold">{{ db_stats.users_count }}</div>
+          <div class="text-sm opacity-90">Users</div>
+        </div>
+        <div class="metric-card">
+          <div class="text-2xl font-bold">{{ db_stats.events_count }}</div>
+          <div class="text-sm opacity-90">Events</div>
+        </div>
+        <div class="metric-card">
+          <div class="text-2xl font-bold">{{ db_stats.bookings_count }}</div>
+          <div class="text-sm opacity-90">Bookings</div>
+        </div>
+        <div class="metric-card">
+          <div class="text-2xl font-bold">{{ db_stats.payments_count }}</div>
+          <div class="text-sm opacity-90">Payments</div>
+        </div>
+      </div>
+      
+      <div class="mt-4 text-center">
+        <div class="text-lg font-semibold">Total DB Queries: {{ db_stats.total_queries }}</div>
+      </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="dev-card">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">
+        <i class="fas fa-tachometer-alt text-purple-600"></i> Performance
+      </h2>
+      
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="font-semibold">Cache:</span>
+          <span class="{% if performance_metrics.cache_enabled %}text-green-600{% else %}text-red-600{% endif %}">
+            <span class="status-indicator {% if performance_metrics.cache_enabled %}status-online{% else %}status-offline{% endif %}"></span>
+            {{ performance_metrics.cache_enabled|yesno:"Enabled,Disabled" }}
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Static Storage:</span>
+          <span class="text-xs">{{ performance_metrics.static_files_storage|slice:"-20:" }}</span>
+        </div>
+        <div class="text-center mt-4">
+          <div id="system-status" class="text-lg font-semibold">
+            <span class="status-indicator status-online"></span>
+            System Online
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Database Queries -->
+  <div class="dev-card">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">
+      <i class="fas fa-search text-blue-600"></i> Recent Database Queries
+      <span class="text-sm font-normal text-gray-600">(Last 10)</span>
+    </h2>
+    
+    {% if recent_queries %}
+      <div class="max-h-96 overflow-y-auto">
+        {% for query in recent_queries %}
+        <div class="query-item">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-xs text-gray-600">Query {{ forloop.counter }}</span>
+            <span class="text-xs text-gray-600">{{ query.time }}s</span>
+          </div>
+          <div class="text-sm">{{ query.sql|truncatechars:100 }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-gray-600">No recent queries available.</p>
+    {% endif %}
+  </div>
+
+  <!-- Developer Console -->
+  <div class="dev-card" id="dev-console" style="display: none;">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">
+      <i class="fas fa-terminal text-green-600"></i> Developer Console
+    </h2>
+    
+    <div class="console-output" id="console-output">
+      <div>Momenta Developer Console v1.0</div>
+      <div>Type 'help' for available commands</div>
+      <div id="console-log"></div>
+    </div>
+    
+    <div class="mt-4">
+      <input type="text" id="console-input" 
+             class="w-full px-3 py-2 border border-gray-300 rounded-md font-mono"
+             placeholder="Enter command..." 
+             onkeypress="handleConsoleInput(event)">
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Developer Dashboard JavaScript
+let consoleVisible = false;
+
+function clearCache() {
+  fetch('{% url "dev_tools:clear_cache" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => response.json())
+  .then(data => {
+    logToConsole('Cache cleared: ' + data.message);
+    alert('Cache cleared successfully!');
+  })
+  .catch(error => {
+    logToConsole('Error clearing cache: ' + error);
+  });
+}
+
+function refreshStatus() {
+  fetch('{% url "dev_tools:system_status" %}')
+  .then(response => response.json())
+  .then(data => {
+    const statusEl = document.getElementById('system-status');
+    if (data.database_connected && data.cache_working) {
+      statusEl.innerHTML = '<span class="status-indicator status-online"></span>System Online';
+      statusEl.className = 'text-lg font-semibold text-green-600';
+    } else {
+      statusEl.innerHTML = '<span class="status-indicator status-offline"></span>System Issues';
+      statusEl.className = 'text-lg font-semibold text-red-600';
+    }
+    logToConsole('System status refreshed');
+  })
+  .catch(error => {
+    logToConsole('Error refreshing status: ' + error);
+  });
+}
+
+function toggleConsole() {
+  const console = document.getElementById('dev-console');
+  consoleVisible = !consoleVisible;
+  console.style.display = consoleVisible ? 'block' : 'none';
+  
+  if (consoleVisible) {
+    document.getElementById('console-input').focus();
+  }
+}
+
+function logToConsole(message) {
+  const log = document.getElementById('console-log');
+  const timestamp = new Date().toLocaleTimeString();
+  log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+  
+  // Auto-scroll to bottom
+  const output = document.getElementById('console-output');
+  output.scrollTop = output.scrollHeight;
+}
+
+function handleConsoleInput(event) {
+  if (event.key === 'Enter') {
+    const input = event.target;
+    const command = input.value.trim();
+    
+    if (command) {
+      logToConsole('> ' + command);
+      executeConsoleCommand(command);
+      input.value = '';
+    }
+  }
+}
+
+function executeConsoleCommand(command) {
+  switch(command.toLowerCase()) {
+    case 'help':
+      logToConsole('Available commands:');
+      logToConsole('  help - Show this help');
+      logToConsole('  clear - Clear console');
+      logToConsole('  status - Show system status');
+      logToConsole('  queries - Show query count');
+      break;
+    
+    case 'clear':
+      document.getElementById('console-log').innerHTML = '';
+      break;
+    
+    case 'status':
+      refreshStatus();
+      break;
+    
+    case 'queries':
+      logToConsole('Total DB queries: {{ db_stats.total_queries }}');
+      break;
+    
+    default:
+      logToConsole('Unknown command: ' + command + '. Type "help" for available commands.');
+  }
+}
+
+// Auto-refresh system status every 30 seconds
+setInterval(refreshStatus, 30000);
+
+// Log initial load
+document.addEventListener('DOMContentLoaded', function() {
+  logToConsole('Developer Dashboard loaded');
+});
+</script>
+{% endblock %}

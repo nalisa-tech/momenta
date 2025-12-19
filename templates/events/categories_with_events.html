@@ -4,67 +4,91 @@
 {% block title %}Event Categories – Momenta{% endblock %}
 
 {% block content %}
-<section class="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="text-center mb-12">
-      <h1 class="text-5xl font-bold text-gray-800 mb-4">Event Categories</h1>
-      <p class="text-xl text-gray-600">Browse events by category</p>
-    </div>
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
 
+<div class="container">
+  <h1 class="page-title">Event Categories</h1>
+  <p style="text-align: center; font-size: 18px; color: #666; margin-bottom: 40px;">
+    Browse events by category and find your perfect experience
+  </p>
+
+  <!-- Categories Grid -->
+  <div class="event-grid">
     {% for category in categories %}
-    <div class="mb-16">
-      <!-- Category Header -->
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-3xl font-bold text-gray-800">
-          {% if category.slug == 'music' %}🎵{% elif category.slug == 'tech' %}💻{% elif category.slug == 'food' %}🍽️{% elif category.slug == 'sports' %}⚽{% endif %}
-          {{ category.name }}
-        </h2>
-        <a href="{% url 'events:category_detail' category.slug %}" 
-           class="text-blue-600 hover:text-blue-800 font-semibold">
-          View All →
-        </a>
+    <div class="event-card">
+      <!-- Category Icon & Header -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 48px; margin-bottom: 15px;">
+          {% if 'Music' in category.name %}🎵
+          {% elif 'Tech' in category.name %}💻
+          {% elif 'Food' in category.name %}🍽️
+          {% elif 'Sports' in category.name %}⚽
+          {% else %}📁{% endif %}
+        </div>
+        <h2>{{ category.name }}</h2>
+        <p style="color: #007bff; font-weight: 600;">
+          {{ category.events.all|length }} Event{{ category.events.all|length|pluralize }}
+        </p>
       </div>
 
-      <!-- Events in this category -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {% for event in category.events.all|slice:":3" %}
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-2">
-          {% if event.primary_image %}
-          <img src="{{ event.primary_image.url }}" alt="{{ event.title }}" class="w-full h-64 object-cover">
-          {% else %}
-          <div class="w-full h-64 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-            <i class="fas fa-calendar-alt text-white text-6xl"></i>
-          </div>
-          {% endif %}
-          
-          <div class="p-6">
-            <span class="inline-block px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold mb-3">
-              {{ category.name }}
-            </span>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ event.title }}</h3>
-            <p class="text-gray-600 mb-4">
-              <i class="far fa-calendar mr-2"></i>{{ event.date|date:"d M Y" }}
-              <br>
-              <i class="fas fa-map-marker-alt mr-2"></i>{{ event.location }}
+      <!-- Events Preview -->
+      {% if category.events.all %}
+        <div style="margin-bottom: 20px;">
+          {% for event in category.events.all|slice:":3" %}
+          <div style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <p style="font-weight: 600; margin-bottom: 5px;">{{ event.title }}</p>
+            <p style="font-size: 13px; color: #666;">
+              {{ event.date|date:"M d" }} • {{ event.location|truncatechars:20 }}
             </p>
-            <div class="flex justify-between items-center">
-              <div>
-                <p class="text-sm text-gray-500">Tickets from</p>
-                <p class="text-2xl font-bold text-green-600">K450</p>
-              </div>
-              <a href="{% url 'events:event_detail' event.id %}" 
-                 class="bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition">
-                View Details
-              </a>
-            </div>
           </div>
+          {% endfor %}
+          
+          {% if category.events.all|length > 3 %}
+          <p style="text-align: center; font-size: 12px; color: #999; margin-top: 10px;">
+            +{{ category.events.all|length|add:"-3" }} more events
+          </p>
+          {% endif %}
         </div>
-        {% empty %}
-        <p class="col-span-full text-center text-gray-500 py-8">No events in this category yet.</p>
-        {% endfor %}
-      </div>
+      {% else %}
+        <div style="text-align: center; padding: 20px 0; color: #999;">
+          <p>No events yet</p>
+        </div>
+      {% endif %}
+
+      <!-- View All Button -->
+      <a href="{% url 'events:events_list' %}?category={{ category.slug }}" class="btn" style="width: 100%; text-align: center; display: block;">
+        View All Events
+      </a>
+    </div>
+    {% empty %}
+    <!-- No Categories Found -->
+    <div style="text-align: center; padding: 60px 20px;">
+      <div style="font-size: 80px; color: #ccc; margin-bottom: 20px;">📁</div>
+      <h2 class="page-title" style="font-size: 28px; margin-bottom: 15px;">No Categories Available</h2>
+      <p style="font-size: 16px; color: #666; margin-bottom: 30px;">Categories will appear here once they are created.</p>
+      {% if user.is_staff %}
+      <a href="{% url 'admin:events_category_add' %}" class="btn">
+        Add First Category
+      </a>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
-</section>
+
+  <!-- Call to Action -->
+  <div style="background: #fff; padding: 40px; border-radius: 14px; margin: 40px auto; max-width: 800px; text-align: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+    <h2 style="font-size: 32px; font-weight: 700; color: #2c3e50; margin-bottom: 20px;">Can't Find What You're Looking For?</h2>
+    <p style="font-size: 18px; color: #666; margin-bottom: 30px;">
+      Browse all our events or get in touch with us to suggest new categories and events.
+    </p>
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+      <a href="{% url 'events:events_list' %}" class="btn" style="margin: 5px;">
+        Browse All Events
+      </a>
+      <a href="mailto:nalisaimbula282@gmail.com" class="btn" style="background: #6c757d; margin: 5px;">
+        Contact Us
+      </a>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -6,7 +6,7 @@ from django.db.models import Sum, Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils import timezone
-from .models import Category, Event, Booking, EventGallery, PaymentTransaction, UserProfile
+from .models import Category, Event, Booking, EventGallery, PaymentTransaction, UserProfile, Venue, Resource, VenueBooking, ResourceAllocation
 
 
 # ============================
@@ -48,17 +48,52 @@ class CategoryAdmin(admin.ModelAdmin):
 # ============================
 # EVENT ADMIN
 # ============================
+# Custom filter for seat availability
+class SeatAvailabilityFilter(admin.SimpleListFilter):
+    title = 'Seat Availability'
+    parameter_name = 'seat_status'
+    
+    def lookups(self, request, model_admin):
+        return (
+            ('sold_out', 'Sold Out'),
+            ('low_stock', 'Low Stock (< 50)'),
+            ('available', 'Available'),
+        )
+    
+    def queryset(self, request, queryset):
+        if self.value() == 'sold_out':
+            return queryset.filter(
+                vip_seats_left=0,
+                gold_seats_left=0,
+                standard_seats_left=0
+            )
+        elif self.value() == 'low_stock':
+            from django.db.models import Q
+            return queryset.filter(
+                Q(vip_seats_left__lt=50, vip_seats_left__gt=0) |
+                Q(gold_seats_left__lt=50, gold_seats_left__gt=0) |
+                Q(standard_seats_left__lt=50, standard_seats_left__gt=0)
+            )
+        elif self.value() == 'available':
+            from django.db.models import Q
+            return queryset.filter(
+                Q(vip_seats_left__gt=0) |
+                Q(gold_seats_left__gt=0) |
+                Q(standard_seats_left__gt=0)
+            )
+
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ("event_title_with_image", "category_badge", "date_formatted", "location_short", "image_status", "seats_status", "booking_count", "revenue")
-    list_filter = ("category", "date")
-    search_fields = ("title", "location", "description")
+    list_filter = ("category", "date", "organizer_name", SeatAvailabilityFilter)
+    search_fields = ("title", "location", "description", "organizer_name")
     date_hierarchy = "date"
     readonly_fields = ("total_seats_left", "image_preview", "booking_stats", 
                       "main_image_preview", "crowd_image_preview", 
                       "experience_image_preview", "performance_image_preview", 
                       "image_upload_status")
     list_per_page = 25
+    actions = ['duplicate_events', 'mark_as_sold_out', 'add_more_seats', 'export_event_data']
     
     fieldsets = (
         ("Event Information", {
@@ -254,19 +289,123 @@ class EventAdmin(admin.ModelAdmin):
             vip_count, gold_count, standard_count, bookings.count(), formatted_revenue
         )
     booking_stats.short_description = "Statistics"
+    
+    # Bulk Actions
+    def duplicate_events(self, request, queryset):
+        """Duplicate selected events for next month"""
+        count = 0
+        for event in queryset:
+            # Create duplicate with next month's date
+            new_date = event.date.replace(month=event.date.month + 1 if event.date.month < 12 else 1,
+                                        year=event.date.year + 1 if event.date.month == 12 else event.date.year)
+            Event.objects.create(
+                title=f"{event.title} (Copy)",
+                description=event.description,
+                date=new_date,
+                time=event.time,
+                location=event.location,
+                category=event.category,
+                main_image=event.main_image,
+                crowd_image=event.crowd_image,
+                experience_image=event.experience_image,
+                performance_image=event.performance_image,
+                vip_seats_left=event.vip_seats_left,
+                gold_seats_left=event.gold_seats_left,
+                standard_seats_left=event.standard_seats_left,
+                organizer_name=event.organizer_name,
+                organizer_phone=event.organizer_phone
+            )
+            count += 1
+        self.message_user(request, f"✅ Successfully duplicated {count} event(s) for next month.")
+    duplicate_events.short_description = "🔄 Duplicate events for next month"
+    
+    def mark_as_sold_out(self, request, queryset):
+        """Mark selected events as sold out"""
+        count = 0
+        for event in queryset:
+            event.vip_seats_left = 0
+            event.gold_seats_left = 0
+            event.standard_seats_left = 0
+            event.save()
+            count += 1
+        self.message_user(request, f"🎫 Marked {count} event(s) as SOLD OUT.")
+    mark_as_sold_out.short_description = "🎫 Mark as SOLD OUT"
+    
+    def add_more_seats(self, request, queryset):
+        """Add 50 more seats to each ticket type"""
+        count = 0
+        for event in queryset:
+            event.vip_seats_left = (event.vip_seats_left or 0) + 50
+            event.gold_seats_left = (event.gold_seats_left or 0) + 50
+            event.standard_seats_left = (event.standard_seats_left or 0) + 50
+            event.save()
+            count += 1
+        self.message_user(request, f"🎟️ Added 50 seats to each type for {count} event(s).")
+    add_more_seats.short_description = "🎟️ Add 50 seats to each type"
+    
+    def export_event_data(self, request, queryset):
+        """Export event data with booking statistics"""
+        import csv
+        from django.http import HttpResponse
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="events_export.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Event', 'Category', 'Date', 'Location', 'Total Bookings', 'Revenue', 'VIP Left', 'Gold Left', 'Standard Left'])
+        
+        for event in queryset:
+            total_bookings = event.bookings.count()
+            revenue = event.bookings.aggregate(total=Sum('total_price'))['total'] or 0
+            writer.writerow([
+                event.title,
+                event.category.name,
+                event.date.strftime('%Y-%m-%d'),
+                event.location,
+                total_bookings,
+                float(revenue),
+                event.vip_seats_left or 0,
+                event.gold_seats_left or 0,
+                event.standard_seats_left or 0
+            ])
+        
+        self.message_user(request, f"📊 Exported {queryset.count()} events to CSV.")
+        return response
+    export_event_data.short_description = "📊 Export event data to CSV"
 
 
 # ============================
 # BOOKING ADMIN
 # ============================
+class PriceRangeFilter(admin.SimpleListFilter):
+    title = 'Price Range'
+    parameter_name = 'price_range'
+    
+    def lookups(self, request, model_admin):
+        return (
+            ('low', 'Under K1,000'),
+            ('medium', 'K1,000 - K5,000'),
+            ('high', 'Over K5,000'),
+        )
+    
+    def queryset(self, request, queryset):
+        if self.value() == 'low':
+            return queryset.filter(total_price__lt=1000)
+        elif self.value() == 'medium':
+            return queryset.filter(total_price__gte=1000, total_price__lte=5000)
+        elif self.value() == 'high':
+            return queryset.filter(total_price__gt=5000)
+
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = ("booking_id", "user_info", "event_link", "ticket_badge", "tickets_count", "price_display", "payment_status_badge", "date_booked")
-    list_filter = ("ticket_type", "booked_at", "event__category")
-    search_fields = ("event__title", "user__username", "user__email", "id")
+    list_filter = ("ticket_type", "booked_at", "event__category", PriceRangeFilter,
+                   ("payment__status", admin.ChoicesFieldListFilter))
+    search_fields = ("event__title", "user__username", "user__email", "id", "payment__transaction_id")
     readonly_fields = ("booked_at", "total_price", "booking_details")
     date_hierarchy = "booked_at"
     list_per_page = 30
+    actions = ['send_confirmation_emails', 'refund_bookings', 'upgrade_to_vip']
     
     fieldsets = (
         ("Booking Information", {
@@ -282,7 +421,7 @@ class BookingAdmin(admin.ModelAdmin):
     )
 
     def booking_id(self, obj):
-        return format_html('<strong>#{:06d}</strong>', obj.id)
+        return format_html('<strong>#{}</strong>', f"{obj.id:06d}")
     booking_id.short_description = "Ref"
 
     def user_info(self, obj):
@@ -373,6 +512,75 @@ class BookingAdmin(admin.ModelAdmin):
             mark_safe(payment_info)
         )
     booking_details.short_description = "Details"
+    
+    # Bulk Actions for Bookings
+    def send_confirmation_emails(self, request, queryset):
+        """Send confirmation emails to selected bookings"""
+        count = 0
+        for booking in queryset:
+            try:
+                # Import the email function from views
+                from .views import send_booking_confirmation_email
+                send_booking_confirmation_email(
+                    booking=booking,
+                    event=booking.event,
+                    payment_method="Admin Resend",
+                    payment_details={}
+                )
+                count += 1
+            except Exception as e:
+                pass
+        self.message_user(request, f"📧 Sent confirmation emails for {count} booking(s).")
+    send_confirmation_emails.short_description = "📧 Send confirmation emails"
+    
+    def refund_bookings(self, request, queryset):
+        """Mark bookings as refunded and restore seats"""
+        count = 0
+        for booking in queryset:
+            try:
+                # Mark payment as refunded
+                payment = booking.payment
+                payment.status = 'refunded'
+                payment.notes += f"\n\nRefunded by admin: {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                payment.save()
+                
+                # Restore seats
+                event = booking.event
+                if booking.ticket_type == 'vip':
+                    event.vip_seats_left = (event.vip_seats_left or 0) + booking.tickets
+                elif booking.ticket_type == 'gold':
+                    event.gold_seats_left = (event.gold_seats_left or 0) + booking.tickets
+                elif booking.ticket_type == 'standard':
+                    event.standard_seats_left = (event.standard_seats_left or 0) + booking.tickets
+                event.save()
+                count += 1
+            except Exception as e:
+                pass
+        self.message_user(request, f"💰 Refunded {count} booking(s) and restored seats.")
+    refund_bookings.short_description = "💰 Refund bookings & restore seats"
+    
+    def upgrade_to_vip(self, request, queryset):
+        """Upgrade selected bookings to VIP (if VIP seats available)"""
+        count = 0
+        for booking in queryset.filter(ticket_type__in=['gold', 'standard']):
+            event = booking.event
+            if (event.vip_seats_left or 0) >= booking.tickets:
+                # Update booking
+                old_type = booking.ticket_type
+                booking.ticket_type = 'vip'
+                booking.total_price = booking.tickets * 1500  # VIP price
+                booking.save()
+                
+                # Update seat counts
+                if old_type == 'gold':
+                    event.gold_seats_left = (event.gold_seats_left or 0) + booking.tickets
+                elif old_type == 'standard':
+                    event.standard_seats_left = (event.standard_seats_left or 0) + booking.tickets
+                event.vip_seats_left = (event.vip_seats_left or 0) - booking.tickets
+                event.save()
+                count += 1
+        self.message_user(request, f"⭐ Upgraded {count} booking(s) to VIP status.")
+    upgrade_to_vip.short_description = "⭐ Upgrade to VIP (free)"
 
 
 # ============================
@@ -695,6 +903,12 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
                 f'</div>'
             )
     quick_actions.short_description = "QUICK ACTIONS"
+    
+    class Media:
+        js = ('admin/js/payment_actions.js',)
+        css = {
+            'all': ('admin/css/payment_admin.css',)
+        }
 
     def payment_summary(self, obj):
         """Enhanced payment overview with visual elements"""
@@ -991,6 +1205,474 @@ class UserProfileAdmin(admin.ModelAdmin):
 # ============================
 # CUSTOM ADMIN SITE CONFIGURATION
 # ============================
-admin.site.site_header = "Momenta Administration"
+admin.site.site_header = "🎉 Momenta Administration"
 admin.site.site_title = "Momenta Admin"
-admin.site.index_title = "Welcome to Momenta Management"
+admin.site.index_title = "Welcome to Momenta Management Dashboard"
+
+# Import required modules for dashboard analytics
+from django.db.models import Sum, Count, Q
+from django.utils import timezone
+from datetime import datetime, timedelta
+
+# Enhanced admin site configuration
+admin.site.site_header = "🎉 Momenta Administration"
+admin.site.site_title = "Momenta Admin"
+admin.site.index_title = "Welcome to Momenta Management Dashboard"
+
+# Custom admin context processor for dashboard data
+def admin_dashboard_context(request):
+    """Add dashboard analytics to admin context"""
+    if not request.path.startswith('/admin/'):
+        return {}
+    
+    try:
+        # Get current date ranges
+        today = timezone.now().date()
+        this_week = today - timedelta(days=7)
+        this_month = today - timedelta(days=30)
+        
+        # Revenue analytics
+        total_revenue = PaymentTransaction.objects.filter(status='completed').aggregate(
+            total=Sum('amount'))['total'] or 0
+        weekly_revenue = PaymentTransaction.objects.filter(
+            status='completed', created_at__date__gte=this_week).aggregate(
+            total=Sum('amount'))['total'] or 0
+        monthly_revenue = PaymentTransaction.objects.filter(
+            status='completed', created_at__date__gte=this_month).aggregate(
+            total=Sum('amount'))['total'] or 0
+        
+        # Booking analytics
+        total_bookings = Booking.objects.count()
+        pending_payments = PaymentTransaction.objects.filter(status='pending').count()
+        completed_payments = PaymentTransaction.objects.filter(status='completed').count()
+        
+        # Event analytics
+        upcoming_events = Event.objects.filter(date__gte=today).count()
+        past_events = Event.objects.filter(date__lt=today).count()
+        
+        # User analytics
+        total_users = UserProfile.objects.count()
+        new_users_this_week = UserProfile.objects.filter(created_at__date__gte=this_week).count()
+        
+        # Popular events (most bookings)
+        popular_events = Event.objects.annotate(
+            booking_count=Count('bookings')
+        ).order_by('-booking_count')[:5]
+        
+        # Recent activity
+        recent_bookings = Booking.objects.select_related('user', 'event').order_by('-booked_at')[:10]
+        recent_payments = PaymentTransaction.objects.select_related('booking__user', 'booking__event').order_by('-created_at')[:10]
+        
+        return {
+            'total_revenue': float(total_revenue),
+            'weekly_revenue': float(weekly_revenue),
+            'monthly_revenue': float(monthly_revenue),
+            'total_bookings': total_bookings,
+            'pending_payments': pending_payments,
+            'completed_payments': completed_payments,
+            'upcoming_events': upcoming_events,
+            'past_events': past_events,
+            'total_users': total_users,
+            'new_users_this_week': new_users_this_week,
+            'popular_events': popular_events,
+            'recent_bookings': recent_bookings,
+            'recent_payments': recent_payments,
+        }
+    except Exception as e:
+        # Return empty context if there's any error
+        return {}
+
+# ============================
+# VENUE ADMIN
+# ============================
+@admin.register(Venue)
+class VenueAdmin(admin.ModelAdmin):
+    list_display = ("venue_info", "capacity_display", "rate_display", "availability_status", "contact_info", "bookings_count")
+    list_filter = ("is_available", "capacity")
+    search_fields = ("name", "address", "contact_person")
+    readonly_fields = ("created_at", "venue_stats")
+    list_per_page = 20
+    
+    fieldsets = (
+        ("Venue Information", {
+            "fields": ("name", "address", "capacity", "facilities")
+        }),
+        ("Contact Details", {
+            "fields": ("contact_person", "contact_phone", "contact_email")
+        }),
+        ("Pricing & Availability", {
+            "fields": ("hourly_rate", "is_available")
+        }),
+        ("Statistics", {
+            "fields": ("venue_stats",),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def venue_info(self, obj):
+        return format_html(
+            '<div><strong>{}</strong><br><span style="color: #666; font-size: 11px;">{}</span></div>',
+            obj.name, obj.address[:50] + '...' if len(obj.address) > 50 else obj.address
+        )
+    venue_info.short_description = "Venue"
+    
+    def capacity_display(self, obj):
+        return format_html(
+            '<span style="background: #17a2b8; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold;">{}</span>',
+            f"{obj.capacity:,}"
+        )
+    capacity_display.short_description = "Capacity"
+    
+    def rate_display(self, obj):
+        return format_html('<strong style="color: #28a745;">K{}/hr</strong>', f"{float(obj.hourly_rate):,.0f}")
+    rate_display.short_description = "Hourly Rate"
+    
+    def availability_status(self, obj):
+        if obj.is_available:
+            return format_html('<span style="color: #28a745; font-weight: bold;">✅ Available</span>')
+        return format_html('<span style="color: #dc3545; font-weight: bold;">❌ Unavailable</span>')
+    availability_status.short_description = "Status"
+    
+    def contact_info(self, obj):
+        contact = []
+        if obj.contact_person:
+            contact.append(obj.contact_person)
+        if obj.contact_phone:
+            contact.append(obj.contact_phone)
+        return format_html('<span style="font-size: 11px;">{}</span>', '<br>'.join(contact) if contact else 'No contact info')
+    contact_info.short_description = "Contact"
+    
+    def bookings_count(self, obj):
+        count = obj.bookings.count()
+        return format_html(
+            '<span style="background: #ffc107; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold;">{}</span>',
+            count
+        )
+    bookings_count.short_description = "Bookings"
+    
+    def venue_stats(self, obj):
+        bookings = obj.bookings.all()
+        total_revenue = sum(booking.total_cost for booking in bookings)
+        
+        return format_html(
+            '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">'
+            '<h3 style="margin-top: 0;">Venue Statistics</h3>'
+            '<p><strong>Total Bookings:</strong> {}</p>'
+            '<p><strong>Total Revenue:</strong> K{:,.0f}</p>'
+            '<p><strong>Average Booking Value:</strong> K{:,.0f}</p>'
+            '<p><strong>Capacity:</strong> {} people</p>'
+            '<p><strong>Hourly Rate:</strong> K{:,.0f}</p>'
+            '</div>',
+            bookings.count(),
+            float(total_revenue),
+            float(total_revenue / bookings.count()) if bookings.count() > 0 else 0,
+            obj.capacity,
+            float(obj.hourly_rate)
+        )
+    venue_stats.short_description = "Statistics"
+# ============================
+# RESOURCE ADMIN
+# ============================
+@admin.register(Resource)
+class ResourceAdmin(admin.ModelAdmin):
+    list_display = ("resource_info", "type_badge", "cost_display", "quantity_display", "availability_status", "supplier_info")
+    list_filter = ("resource_type", "is_available")
+    search_fields = ("name", "description", "supplier_name")
+    list_per_page = 25
+    
+    fieldsets = (
+        ("Resource Information", {
+            "fields": ("name", "resource_type", "description")
+        }),
+        ("Availability & Pricing", {
+            "fields": ("quantity_available", "cost_per_day", "is_available")
+        }),
+        ("Supplier Details", {
+            "fields": ("supplier_name", "supplier_phone"),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def resource_info(self, obj):
+        return format_html(
+            '<div><strong>{}</strong><br><span style="color: #666; font-size: 11px;">{}</span></div>',
+            obj.name, obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
+        )
+    resource_info.short_description = "Resource"
+    
+    def type_badge(self, obj):
+        colors = {
+            'sound': '#e91e63',
+            'lighting': '#ff9800',
+            'stage': '#9c27b0',
+            'seating': '#2196f3',
+            'security': '#f44336',
+            'catering': '#4caf50',
+            'transport': '#607d8b',
+            'other': '#795548'
+        }
+        color = colors.get(obj.resource_type, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: bold;">{}</span>',
+            color, obj.get_resource_type_display()
+        )
+    type_badge.short_description = "Type"
+    
+    def cost_display(self, obj):
+        return format_html('<strong style="color: #28a745;">K{}/day</strong>', f"{float(obj.cost_per_day):,.0f}")
+    cost_display.short_description = "Daily Rate"
+    
+    def quantity_display(self, obj):
+        return format_html(
+            '<span style="background: #17a2b8; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold;">{}</span>',
+            obj.quantity_available
+        )
+    quantity_display.short_description = "Available"
+    
+    def availability_status(self, obj):
+        if obj.is_available:
+            return format_html('<span style="color: #28a745; font-weight: bold;">✅ Available</span>')
+        return format_html('<span style="color: #dc3545; font-weight: bold;">❌ Unavailable</span>')
+    availability_status.short_description = "Status"
+    
+    def supplier_info(self, obj):
+        if obj.supplier_name:
+            return format_html(
+                '<div style="font-size: 11px;"><strong>{}</strong><br>{}</div>',
+                obj.supplier_name, obj.supplier_phone or 'No phone'
+            )
+        return format_html('<span style="color: #999;">No supplier info</span>')
+    supplier_info.short_description = "Supplier"
+# ============================
+# VENUE BOOKING ADMIN
+# ============================
+@admin.register(VenueBooking)
+class VenueBookingAdmin(admin.ModelAdmin):
+    list_display = ("booking_info", "venue_name", "event_name", "datetime_display", "duration_display", "cost_display", "status_badge")
+    list_filter = ("status", "venue", "start_datetime")
+    search_fields = ("event__title", "venue__name", "notes")
+    readonly_fields = ("total_cost", "created_at", "updated_at", "booking_details")
+    date_hierarchy = "start_datetime"
+    list_per_page = 20
+    
+    fieldsets = (
+        ("Booking Information", {
+            "fields": ("event", "venue", "status")
+        }),
+        ("Schedule", {
+            "fields": ("start_datetime", "end_datetime", "setup_hours", "cleanup_hours")
+        }),
+        ("Cost", {
+            "fields": ("total_cost",)
+        }),
+        ("Additional Information", {
+            "fields": ("notes",),
+            "classes": ("collapse",)
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+        ("Complete Details", {
+            "fields": ("booking_details",),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def booking_info(self, obj):
+        return format_html('<strong>#{}</strong>', obj.id)
+    booking_info.short_description = "Booking ID"
+    
+    def venue_name(self, obj):
+        return format_html('<strong>{}</strong>', obj.venue.name)
+    venue_name.short_description = "Venue"
+    
+    def event_name(self, obj):
+        return format_html('<strong>{}</strong>', obj.event.title)
+    event_name.short_description = "Event"
+    
+    def datetime_display(self, obj):
+        return format_html(
+            '<div style="font-size: 11px;"><strong>{}</strong><br>{} - {}</div>',
+            obj.start_datetime.strftime('%b %d, %Y'),
+            obj.start_datetime.strftime('%I:%M %p'),
+            obj.end_datetime.strftime('%I:%M %p')
+        )
+    datetime_display.short_description = "Date & Time"
+    
+    def duration_display(self, obj):
+        duration = (obj.end_datetime - obj.start_datetime).total_seconds() / 3600
+        total_hours = duration + obj.setup_hours + obj.cleanup_hours
+        return format_html(
+            '<div style="text-align: center;"><strong>{:.1f}h</strong><br><span style="font-size: 10px;">({:.1f}h event + {}h setup + {}h cleanup)</span></div>',
+            total_hours, duration, obj.setup_hours, obj.cleanup_hours
+        )
+    duration_display.short_description = "Duration"
+    
+    def cost_display(self, obj):
+        return format_html('<strong style="color: #28a745; font-size: 14px;">K{:,.0f}</strong>', float(obj.total_cost))
+    cost_display.short_description = "Total Cost"
+    
+    def status_badge(self, obj):
+        colors = {
+            'pending': '#ffc107',
+            'confirmed': '#28a745',
+            'cancelled': '#dc3545',
+            'completed': '#6c757d'
+        }
+        color = colors.get(obj.status, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 6px 12px; border-radius: 15px; font-size: 11px; font-weight: bold;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = "Status"
+    
+    def booking_details(self, obj):
+        duration = (obj.end_datetime - obj.start_datetime).total_seconds() / 3600
+        total_hours = duration + obj.setup_hours + obj.cleanup_hours
+        
+        return format_html(
+            '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">'
+            '<h3 style="margin-top: 0;">Complete Booking Details</h3>'
+            '<p><strong>Event:</strong> {}</p>'
+            '<p><strong>Venue:</strong> {} (Capacity: {})</p>'
+            '<p><strong>Date:</strong> {}</p>'
+            '<p><strong>Time:</strong> {} - {}</p>'
+            '<p><strong>Event Duration:</strong> {:.1f} hours</p>'
+            '<p><strong>Setup Time:</strong> {} hours</p>'
+            '<p><strong>Cleanup Time:</strong> {} hours</p>'
+            '<p><strong>Total Hours:</strong> {:.1f} hours</p>'
+            '<p><strong>Hourly Rate:</strong> K{:,.0f}</p>'
+            '<p><strong>Total Cost:</strong> K{:,.0f}</p>'
+            '<p><strong>Status:</strong> {}</p>'
+            '<p><strong>Notes:</strong> {}</p>'
+            '</div>',
+            obj.event.title,
+            obj.venue.name, obj.venue.capacity,
+            obj.start_datetime.strftime('%B %d, %Y'),
+            obj.start_datetime.strftime('%I:%M %p'),
+            obj.end_datetime.strftime('%I:%M %p'),
+            duration,
+            obj.setup_hours,
+            obj.cleanup_hours,
+            total_hours,
+            float(obj.venue.hourly_rate),
+            float(obj.total_cost),
+            obj.get_status_display(),
+            obj.notes or 'No notes'
+        )
+    booking_details.short_description = "Details"
+# ============================
+# RESOURCE ALLOCATION ADMIN
+# ============================
+@admin.register(ResourceAllocation)
+class ResourceAllocationAdmin(admin.ModelAdmin):
+    list_display = ("allocation_info", "event_name", "resource_info", "quantity_display", "duration_display", "cost_display", "status_badge")
+    list_filter = ("status", "resource__resource_type", "start_date")
+    search_fields = ("event__title", "resource__name", "notes")
+    readonly_fields = ("total_cost", "created_at", "allocation_details")
+    date_hierarchy = "start_date"
+    list_per_page = 25
+    
+    fieldsets = (
+        ("Allocation Information", {
+            "fields": ("event", "resource", "quantity_needed", "status")
+        }),
+        ("Schedule", {
+            "fields": ("start_date", "end_date")
+        }),
+        ("Cost", {
+            "fields": ("total_cost",)
+        }),
+        ("Additional Information", {
+            "fields": ("notes",),
+            "classes": ("collapse",)
+        }),
+        ("Complete Details", {
+            "fields": ("allocation_details",),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def allocation_info(self, obj):
+        return format_html('<strong>#{}</strong>', obj.id)
+    allocation_info.short_description = "Allocation ID"
+    
+    def event_name(self, obj):
+        return format_html('<strong>{}</strong>', obj.event.title)
+    event_name.short_description = "Event"
+    
+    def resource_info(self, obj):
+        return format_html(
+            '<div><strong>{}</strong><br><span style="color: #666; font-size: 11px;">{}</span></div>',
+            obj.resource.name, obj.resource.get_resource_type_display()
+        )
+    resource_info.short_description = "Resource"
+    
+    def quantity_display(self, obj):
+        return format_html(
+            '<span style="background: #17a2b8; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold;">{}</span>',
+            obj.quantity_needed
+        )
+    quantity_display.short_description = "Quantity"
+    
+    def duration_display(self, obj):
+        duration_days = (obj.end_date - obj.start_date).days + 1
+        return format_html(
+            '<div style="text-align: center;"><strong>{} days</strong><br><span style="font-size: 10px;">{} - {}</span></div>',
+            duration_days,
+            obj.start_date.strftime('%b %d'),
+            obj.end_date.strftime('%b %d')
+        )
+    duration_display.short_description = "Duration"
+    
+    def cost_display(self, obj):
+        return format_html('<strong style="color: #28a745; font-size: 14px;">K{:,.0f}</strong>', float(obj.total_cost))
+    cost_display.short_description = "Total Cost"
+    
+    def status_badge(self, obj):
+        colors = {
+            'requested': '#ffc107',
+            'confirmed': '#28a745',
+            'delivered': '#17a2b8',
+            'returned': '#6c757d',
+            'cancelled': '#dc3545'
+        }
+        color = colors.get(obj.status, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 6px 12px; border-radius: 15px; font-size: 11px; font-weight: bold;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = "Status"
+    
+    def allocation_details(self, obj):
+        duration_days = (obj.end_date - obj.start_date).days + 1
+        
+        return format_html(
+            '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">'
+            '<h3 style="margin-top: 0;">Complete Allocation Details</h3>'
+            '<p><strong>Event:</strong> {}</p>'
+            '<p><strong>Resource:</strong> {} ({})</p>'
+            '<p><strong>Quantity Needed:</strong> {}</p>'
+            '<p><strong>Start Date:</strong> {}</p>'
+            '<p><strong>End Date:</strong> {}</p>'
+            '<p><strong>Duration:</strong> {} days</p>'
+            '<p><strong>Daily Rate:</strong> K{:,.0f}</p>'
+            '<p><strong>Total Cost:</strong> K{:,.0f}</p>'
+            '<p><strong>Status:</strong> {}</p>'
+            '<p><strong>Supplier:</strong> {}</p>'
+            '<p><strong>Notes:</strong> {}</p>'
+            '</div>',
+            obj.event.title,
+            obj.resource.name, obj.resource.get_resource_type_display(),
+            obj.quantity_needed,
+            obj.start_date.strftime('%B %d, %Y'),
+            obj.end_date.strftime('%B %d, %Y'),
+            duration_days,
+            float(obj.resource.cost_per_day),
+            float(obj.total_cost),
+            obj.get_status_display(),
+            obj.resource.supplier_name or 'No supplier info',
+            obj.notes or 'No notes'
+        )
+    allocation_details.short_description = "Details"
