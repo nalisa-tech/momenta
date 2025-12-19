@@ -27,4 +27,4 @@ else:
 
 # Start the Gunicorn server
 echo "🌐 Starting Gunicorn server..."
-exec gunicorn event_system.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+exec gunicorn event_system.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --max-requests 1000 --max-requests-jitter 100
