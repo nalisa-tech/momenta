@@ -5,13 +5,9 @@ set -e
 
 echo "Starting Momenta Event Management System..."
 
-# Run database migrations
-echo "Running database migrations..."
-python manage.py migrate --noinput || {
-    echo "Migration failed, retrying..."
-    sleep 2
-    python manage.py migrate --noinput
-}
+# Initialize database
+echo "Initializing database..."
+python init_db.py
 
 # Collect static files
 echo "Collecting static files..."
