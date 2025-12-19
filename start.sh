@@ -3,14 +3,22 @@
 # Exit on any error
 set -e
 
-echo "🚀 Starting Momenta Event Management System..."
+echo "Starting Momenta Event Management System..."
 
 # Run database migrations
-echo "📊 Running database migrations..."
-python manage.py migrate --noinput
+echo "Running database migrations..."
+python manage.py migrate --noinput || {
+    echo "Migration failed, retrying..."
+    sleep 2
+    python manage.py migrate --noinput
+}
 
-# Create superuser if it doesn't exist (optional)
-echo "👤 Creating superuser if needed..."
+# Collect static files
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --clear
+
+# Create superuser if it doesn't exist
+echo "Creating superuser if needed..."
 python manage.py shell -c "
 from django.contrib.auth.models import User
 import os
@@ -20,11 +28,17 @@ if not User.objects.filter(username='admin').exists():
         email=os.environ.get('ADMIN_EMAIL', 'admin@momenta.zm'),
         password=os.environ.get('ADMIN_PASSWORD', 'admin123')
     )
-    print('✅ Superuser created: admin')
+    print('Superuser created: admin')
 else:
-    print('✅ Superuser already exists')
-"
+    print('Superuser already exists')
+" || echo "Superuser creation skipped"
 
 # Start the Gunicorn server
-echo "🌐 Starting Gunicorn server..."
-exec gunicorn event_system.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --max-requests 1000 --max-requests-jitter 100
+echo "Starting Gunicorn server on port ${PORT:-8000}..."
+exec gunicorn event_system.wsgi:application \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --workers 2 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info
