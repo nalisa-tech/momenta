@@ -5,6 +5,9 @@ set -e
 
 echo "Starting Momenta Event Management System..."
 
+# Set production settings
+export DJANGO_SETTINGS_MODULE=production_settings_clean
+
 # Initialize database for Railway
 echo "Running Railway database setup..."
 python railway_setup.py
