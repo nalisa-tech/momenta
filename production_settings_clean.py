@@ -12,7 +12,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- Static Files (CSS, JS, Images) ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # For production
-STATICFILES_DIRS = [BASE_DIR / 'events/static']
+
+# Only include STATICFILES_DIRS if the directory exists
+STATICFILES_DIRS = []
+events_static_dir = BASE_DIR / 'events/static'
+if events_static_dir.exists():
+    STATICFILES_DIRS = [events_static_dir]
 
 # Use WhiteNoise for static files in production
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

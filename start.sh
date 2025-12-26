@@ -8,6 +8,10 @@ echo "Starting Momenta Event Management System..."
 # Set production settings
 export DJANGO_SETTINGS_MODULE=production_settings_clean
 
+# Create static directories if they don't exist
+mkdir -p events/static
+mkdir -p staticfiles
+
 # Initialize database for Railway
 echo "Running Railway database setup..."
 python railway_setup.py
