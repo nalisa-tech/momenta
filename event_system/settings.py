@@ -59,7 +59,7 @@ if DEBUG:
     INSTALLED_APPS += [
         'debug_toolbar',
         'django_extensions',
-        'silk',
+        # 'silk',  # Disabled due to Django compatibility issue
     ]
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
@@ -78,7 +78,7 @@ MIDDLEWARE = [
 # --- Developer Tools Middleware (Only in DEBUG mode) ---
 if DEBUG:
     MIDDLEWARE = [
-        'silk.middleware.SilkyMiddleware',  # Performance profiling
+        # 'silk.middleware.SilkyMiddleware',  # Disabled due to compatibility issue
         'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug toolbar
     ] + MIDDLEWARE
 
