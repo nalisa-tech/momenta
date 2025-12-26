@@ -21,9 +21,12 @@ if settings.DEBUG:
     except ImportError:
         pass
     
-    try:
-        urlpatterns += [
-            path('silk/', include('silk.urls', namespace='silk')),
-        ]
-    except ImportError:
-        pass
+    # Only add Silk if it's actually installed and working
+    if 'silk' in settings.INSTALLED_APPS:
+        try:
+            import silk
+            urlpatterns += [
+                path('silk/', include('silk.urls', namespace='silk')),
+            ]
+        except (ImportError, RuntimeError):
+            pass
