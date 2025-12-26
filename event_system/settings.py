@@ -178,6 +178,16 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+else:
+    # Explicitly disable ALL SSL/HTTPS features in development
+    SECURE_SSL_REDIRECT = False
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_HSTS_SECONDS = 0
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Session settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks
