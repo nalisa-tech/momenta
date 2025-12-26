@@ -8,7 +8,7 @@ import django
 from pathlib import Path
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'production_settings_clean')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'railway_production')
 sys.path.append(str(Path(__file__).parent))
 
 try:

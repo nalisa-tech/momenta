@@ -6,7 +6,7 @@ set -e
 echo "Starting Momenta Event Management System..."
 
 # Set production settings
-export DJANGO_SETTINGS_MODULE=production_settings_clean
+export DJANGO_SETTINGS_MODULE=railway_production
 
 # Create static directories if they don't exist
 mkdir -p events/static
