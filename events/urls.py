@@ -7,6 +7,7 @@ app_name = "events"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("health/", views.health_check, name="health_check"),  # Health check for Railway
     path("event/<int:event_id>/", views.event_detail, name="event_detail"),
     path("login/", views.login_user, name="login"),
     path("logout/", views.logout_user, name="logout"),

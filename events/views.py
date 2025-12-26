@@ -1095,3 +1095,14 @@ def facilities_public(request):
     }
     
     return render(request, 'events/facilities_public.html', context)
+
+# ==============================
+# HEALTH CHECK ENDPOINT
+# ==============================
+def health_check(request):
+    """Simple health check endpoint for Railway"""
+    return JsonResponse({
+        'status': 'healthy',
+        'timestamp': timezone.now().isoformat(),
+        'service': 'Momenta Event Management'
+    })
