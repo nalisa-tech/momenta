@@ -90,7 +90,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '(9nl9hazytjjz7fxy18zmy-uc**t7t^eqa2e(c=wcd
 # Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
-    # Production database (PostgreSQL on Railway)
+    # Production database (PostgreSQL or other)
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
