@@ -9,8 +9,8 @@ import django
 from pathlib import Path
 
 def setup_pythonanywhere():
-    print("🚀 Setting up Momenta Events for PythonAnywhere")
-    print("=" * 50)
+    print("🚀 Setting up Momenta Events for PythonAnywhere (Python 3.11)")
+    print("=" * 60)
     
     # Setup Django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'event_system.settings')

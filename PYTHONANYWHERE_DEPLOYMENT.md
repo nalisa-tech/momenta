@@ -19,7 +19,7 @@
 3. Run these commands:
 ```bash
 cd /home/Nalisa13
-mkvirtualenv --python=/usr/bin/python3.10 momenta
+mkvirtualenv --python=/usr/bin/python3.11 momenta
 cd momenta
 pip install -r requirements.txt
 ```
@@ -36,7 +36,7 @@ python manage.py collectstatic --noinput
 1. Go to **Web** tab
 2. Click **"Add a new web app"**
 3. Choose **"Manual configuration"**
-4. Select **Python 3.10**
+4. Select **Python 3.11**
 
 ### **Step 5: Configure WSGI File**
 1. In **Web** tab, click on WSGI configuration file link
